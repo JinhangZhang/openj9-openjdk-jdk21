@@ -165,10 +165,10 @@ public class RSAKeyFactory extends KeyFactorySpi {
      public static void checkKeyLengths(int modulusLen, BigInteger exponent,
             int minModulusLen, int maxModulusLen) throws InvalidKeyException {
 
-        if ((minModulusLen > 0) && (modulusLen < (minModulusLen))) {
-            throw new InvalidKeyException( "RSA keys must be at least " +
-                minModulusLen + " bits long");
-        }
+        // if ((minModulusLen > 0) && (modulusLen < (minModulusLen))) {
+        //     throw new InvalidKeyException( "RSA keys must be at least " +
+        //         minModulusLen + " bits long");
+        // }
 
         // Even though our policy file may allow this, we don't want
         // either value (mod/exp) to be too big.
