@@ -199,6 +199,7 @@ typedef int OSSL_EVP_PKEY_derive_t(EVP_PKEY_CTX *, unsigned char *, size_t *);
 typedef void OSSL_EVP_PKEY_free_t(EVP_PKEY *);
 
 typedef int OSSL_PKCS12_key_gen_t(const char *, int, unsigned char *, int, int, int, int, unsigned char *, const EVP_MD *);
+typedef int OSSL_PKCS5_PBKDF2_HMAC_t(const char *, int, const unsigned char *, int, int, const EVP_MD *, int, unsigned char *);
 
 typedef int OSSL_CRYPTO_num_locks_t();
 typedef void OSSL_CRYPTO_THREADID_set_numeric_t(CRYPTO_THREADID *id, unsigned long val);
@@ -337,6 +338,9 @@ OSSL_EVP_PKEY_free_t *OSSL_EVP_PKEY_free;
 
 /* Define pointers for OpenSSL functions to handle PBE algorithm. */
 OSSL_PKCS12_key_gen_t* OSSL_PKCS12_key_gen;
+
+/* Define pointers for OpenSSL functions to handle PBKDF2 algorithm. */
+OSSL_PKCS5_PBKDF2_HMAC_t* OSSL_PKCS5_PBKDF2_HMAC;
 
 /* Structure for OpenSSL Digest context. */
 typedef struct OpenSSLMDContext {
@@ -1057,6 +1061,8 @@ Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
     /* Load the functions symbols for OpenSSL PBE algorithm. */
     OSSL_PKCS12_key_gen = (OSSL_PKCS12_key_gen_t*)find_crypto_symbol(crypto_library, "PKCS12_key_gen_uni");
 
+    OSSL_PKCS5_PBKDF2_HMAC = (OSSL_PKCS5_PBKDF2_HMAC_t*)find_crypto_symbol(crypto_library, "PKCS5_PBKDF2_HMAC");
+
     if ((NULL == OSSL_error_string) ||
         (NULL == OSSL_error_string_n) ||
         (NULL == OSSL_get_error) ||
@@ -1122,6 +1128,7 @@ Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
         (NULL == OSSL_EC_KEY_set_public_key) ||
         (NULL == OSSL_EC_KEY_check_key) ||
         (NULL == OSSL_PKCS12_key_gen) ||
+        (NULL == OSSL_PKCS5_PBKDF2_HMAC) ||
         /* Check symbols that are only available in OpenSSL 1.1.1 and above. */
         ((ossl_ver >= OPENSSL_VERSION_1_1_1) &&
             ((NULL == OSSL_EVP_PKEY_get_raw_private_key) ||
@@ -3844,4 +3851,84 @@ cleanup:
         (*env)->ReleasePrimitiveArrayCritical(env, privateKey, privateKeyArray, 0);
     }
     return ret;
+}
+
+/* Password based key derivation functions
+ *
+ * Class:     jdk_crypto_jniprovider_NativeCrypto
+ * Method:    PBKDF2_derive
+ * Signature: ([BI[BI[BII)I
+ */
+JNIEXPORT jbyteArray JNICALL 
+Java_jdk_crypto_jniprovider_NativeCrypto_PBKDF2_1derive
+    (JNIEnv *env, jobject obj, jbyteArray password, jbyteArray salt, jint iterations, jint keyLength, jint hashAlgorithm) 
+{
+    const EVP_MD *digestAlgorithm = NULL;
+    char *nativePassword = NULL;
+    unsigned char *nativeSalt = NULL;
+    unsigned char *resultDerivedKeyNative = NULL;
+    jbyteArray resultDerivedKey = NULL;
+    jint saltLength = 0;
+    jint passwordLength = 0;
+
+    switch (hashAlgorithm) {
+        case jdk_crypto_jniprovider_NativeCrypto_SHA1_160:
+            digestAlgorithm = (*OSSL_sha1)();
+            break;
+        case jdk_crypto_jniprovider_NativeCrypto_SHA2_224:
+            digestAlgorithm = (*OSSL_sha224)();
+            break;
+        case jdk_crypto_jniprovider_NativeCrypto_SHA2_256:
+            digestAlgorithm = (*OSSL_sha256)();
+            break;
+        case jdk_crypto_jniprovider_NativeCrypto_SHA5_384:
+            digestAlgorithm = (*OSSL_sha384)();
+            break;
+        case jdk_crypto_jniprovider_NativeCrypto_SHA5_512:
+            digestAlgorithm = (*OSSL_sha512)();
+            break;
+        default:
+            goto cleanup;
+    }
+
+    nativePassword = (char*)((*env)->GetPrimitiveArrayCritical(env, password, 0));
+    if (NULL == nativePassword) {
+        goto cleanup;
+    }
+    passwordLength = (*env)->GetArrayLength(env, password);
+
+    nativeSalt = (unsigned char*)((*env)->GetPrimitiveArrayCritical(env, salt, 0));
+    if (NULL == nativeSalt) {
+        goto cleanup;
+    }
+    saltLength = (*env)->GetArrayLength(env, salt);
+
+    // Allocate the result.
+    resultDerivedKey = (*env)->NewByteArray(env, keyLength);
+    if (NULL == resultDerivedKey) {
+        goto cleanup;
+    }
+
+    // Get pointer to result we just allocated.
+    resultDerivedKeyNative = (unsigned char *)((*env)->GetPrimitiveArrayCritical(env, resultDerivedKey, 0));
+    if (NULL == resultDerivedKeyNative) {
+        goto cleanup;
+    }
+
+    if (0 == (*OSSL_PKCS5_PBKDF2_HMAC)(nativePassword, passwordLength, nativeSalt, saltLength, iterations, digestAlgorithm, keyLength, resultDerivedKeyNative)) {
+        printErrors();
+        goto cleanup;
+    }
+cleanup:
+    if (NULL != resultDerivedKeyNative) {
+        (*env)->ReleasePrimitiveArrayCritical(env, resultDerivedKey, resultDerivedKeyNative, JNI_ABORT);
+    }
+    if (NULL != nativePassword) {
+        (*env)->ReleasePrimitiveArrayCritical(env, password, nativePassword, JNI_ABORT);
+    }
+    if (NULL != nativeSalt) {
+        (*env)->ReleasePrimitiveArrayCritical(env, salt, nativeSalt, JNI_ABORT);
+    }
+
+    return resultDerivedKey;
 }

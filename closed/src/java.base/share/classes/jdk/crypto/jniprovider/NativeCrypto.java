@@ -520,4 +520,13 @@ public class NativeCrypto {
                                               byte[] computedSecret,
                                               int computedSecretLength,
                                               int curveType);
+    
+    // =========================================================================
+    // Password based key derivation functions ( PBKDF )
+    // =========================================================================
+    public final static native byte[] PBKDF2_derive(byte[] password,
+                                                    byte[] salt,
+                                                    int iterations,
+                                                    int keyLength,
+                                                    int hashAlgorithm);
 }
