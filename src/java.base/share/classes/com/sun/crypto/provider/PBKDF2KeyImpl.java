@@ -140,6 +140,10 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
                     hashIndex = NativeCrypto.SHA5_384;
                 } else if (prfAlgo.equals("HmacSHA512")) {
                     hashIndex = NativeCrypto.SHA5_512;
+                } else if (prfAlgo.equals("HmacSHA512/224")) {
+                    hashIndex = NativeCrypto.SHA5_512_224;
+                } else if (prfAlgo.equals("HmacSHA512/256")) {
+                    hashIndex = NativeCrypto.SHA5_512_256;
                 } else {
                     hashSupported = false;
                 }

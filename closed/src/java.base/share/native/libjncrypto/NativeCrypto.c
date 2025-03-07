@@ -236,6 +236,8 @@ OSSL_sha_t* OSSL_sha256;
 OSSL_sha_t* OSSL_sha224;
 OSSL_sha_t* OSSL_sha384;
 OSSL_sha_t* OSSL_sha512;
+OSSL_sha_t* OSSL_sha512_224;
+OSSL_sha_t* OSSL_sha512_256;
 OSSL_MD_CTX_new_t* OSSL_MD_CTX_new;
 OSSL_DigestInit_ex_t* OSSL_DigestInit_ex;
 OSSL_MD_CTX_copy_ex_t* OSSL_MD_CTX_copy_ex;
@@ -891,6 +893,8 @@ Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
     OSSL_sha224 = (OSSL_sha_t*)find_crypto_symbol(crypto_library, "EVP_sha224");
     OSSL_sha384 = (OSSL_sha_t*)find_crypto_symbol(crypto_library, "EVP_sha384");
     OSSL_sha512 = (OSSL_sha_t*)find_crypto_symbol(crypto_library, "EVP_sha512");
+    OSSL_sha512_224 = (OSSL_sha_t*)find_crypto_symbol(crypto_library, "EVP_sha512_224");
+    OSSL_sha512_256 = (OSSL_sha_t*)find_crypto_symbol(crypto_library, "EVP_sha512_256");
 
     if (ossl_ver >= OPENSSL_VERSION_1_1_0) {
         OSSL_MD_CTX_new = (OSSL_MD_CTX_new_t*)find_crypto_symbol(crypto_library, "EVP_MD_CTX_new");
@@ -1071,6 +1075,8 @@ Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
         (NULL == OSSL_sha224) ||
         (NULL == OSSL_sha384) ||
         (NULL == OSSL_sha512) ||
+        (NULL == OSSL_sha512_224) ||
+        (NULL == OSSL_sha512_256) ||
         (NULL == OSSL_MD_CTX_new) ||
         (NULL == OSSL_MD_CTX_reset) ||
         (NULL == OSSL_MD_CTX_free) ||
@@ -3886,6 +3892,12 @@ Java_jdk_crypto_jniprovider_NativeCrypto_PBKDF2_1derive
             break;
         case jdk_crypto_jniprovider_NativeCrypto_SHA5_512:
             digestAlgorithm = (*OSSL_sha512)();
+            break;
+        case jdk_crypto_jniprovider_NativeCrypto_SHA5_512_224:
+            digestAlgorithm = (*OSSL_sha512_224)();
+            break;
+        case jdk_crypto_jniprovider_NativeCrypto_SHA5_512_256:
+            digestAlgorithm = (*OSSL_sha512_256)();
             break;
         default:
             goto cleanup;
