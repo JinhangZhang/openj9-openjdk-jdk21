@@ -383,14 +383,18 @@ public final class SunEntries {
         }
 
         if (useNativeSHA512_224 && NativeCrypto.isAllowedAndLoaded()) {
+			System.out.println("SUN provider is using native SHA-512-224");
             providerSHA512_224 = "sun.security.provider.NativeSHA5$SHA512_224";
         } else {
+			System.out.println("SUN provider is not using native SHA-512-224");
             providerSHA512_224 = "sun.security.provider.SHA5$SHA512_224";
         }
 
         if (useNativeSHA512_256 && NativeCrypto.isAllowedAndLoaded()) {
+			System.out.println("SUN provider is using native SHA-512-256");
             providerSHA512_256 = "sun.security.provider.NativeSHA5$SHA512_256";
         } else {
+			System.out.println("SUN provider is not using native SHA-512-224");
             providerSHA512_256 = "sun.security.provider.SHA5$SHA512_256";
         }
 
