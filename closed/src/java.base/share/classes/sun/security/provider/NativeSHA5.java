@@ -41,6 +41,7 @@ abstract class NativeSHA5 {
 
         public SHA512_224() {
             super("SHA-512-224", 28, NativeCrypto.SHA5_512_224);
+            System.out.println("Using native SHA-512-224");
         }
     }
 
@@ -51,6 +52,7 @@ abstract class NativeSHA5 {
 
         public SHA512_256() {
             super("SHA-512-256", 32, NativeCrypto.SHA5_512_256);
+            System.out.println("Using native SHA-512-256");
         }
     }
 
