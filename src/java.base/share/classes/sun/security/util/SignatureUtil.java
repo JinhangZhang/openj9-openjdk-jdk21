@@ -392,9 +392,12 @@ public class SignatureUtil {
 
             AlgorithmParameters params = null;
             try {
+                System.out.println("SignatureUtil fromSignature before sigEngine.getParameters()");
                 params = sigEngine.getParameters();
+                System.out.println("SignatureUtil fromSignature after sigEngine.getParameters()");
             } catch (UnsupportedOperationException e) {
                 // some provider does not support it
+                System.out.println("SignatureUtil fromSignature catch exception: some provider does not support it");
             }
             if (params != null) {
                 return AlgorithmId.get(sigEngine.getParameters());

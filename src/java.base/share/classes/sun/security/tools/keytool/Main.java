@@ -57,7 +57,6 @@ import java.security.cert.X509CRL;
 import java.security.cert.X509CRLEntry;
 import java.security.cert.X509CRLSelector;
 import javax.security.auth.x500.X500Principal;
-import java.util.Base64;
 
 import sun.security.pkcs12.PKCS12KeyStore;
 import sun.security.provider.certpath.CertPathConstraintsParameters;
@@ -1643,6 +1642,8 @@ public final class Main {
         if (sigAlgName == null) {
             sigAlgName = getCompatibleSigAlgName(privKey);
         }
+
+        System.out.println("sigAlgName is: " + sigAlgName + ", provider is: " + Signature.getInstance(sigAlgName).getProvider().getName());
 
         X500Name subject = dname == null?
                 new X500Name(((X509Certificate)cert).getSubjectX500Principal().getEncoded()):
