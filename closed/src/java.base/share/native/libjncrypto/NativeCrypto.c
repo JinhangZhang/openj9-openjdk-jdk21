@@ -628,7 +628,7 @@ load_crypto_library(jboolean traceEnabled, const char *libName)
         result = LoadLibrary(libName);
 #else /* defined(_WIN32) */
         int flags = RTLD_LOCAL | RTLD_NOW;
-        result = open_in_base_ns(libName, flags);
+        result = dlmopen(0,libName, flags);
 #endif /* defined(_AIX) */
     }
     return result;
