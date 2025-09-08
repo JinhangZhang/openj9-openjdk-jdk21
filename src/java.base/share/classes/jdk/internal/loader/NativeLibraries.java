@@ -134,10 +134,8 @@ public final class NativeLibraries {
     public NativeLibrary loadLibrary(Class<?> fromClass, File file) {
         // Check to see if we're attempting to access a static library
         String name = findBuiltinLib(file.getName());
-        System.out.println("NativeLibraries loadLibrary file.getName() is: " + file.getName());
         boolean isBuiltin = (name != null);
         if (!isBuiltin) {
-            System.out.println("NativeLibraries loadLibrary name is: " + name);
             name = AccessController.doPrivileged(new PrivilegedAction<>() {
                     public String run() {
                         try {
@@ -276,15 +274,11 @@ public final class NativeLibraries {
 
     private NativeLibrary findFromPaths(String[] paths, Class<?> fromClass, String name) {
         for (String path : paths) {
-            System.out.println("NativeLibraries findFromPaths path is: " + path);
             File libfile = new File(path, System.mapLibraryName(name));
-            System.out.println("NativeLibraries findFromPaths name is: " + name + ", System.mapLibraryName(name) is: " + System.mapLibraryName(name));
             NativeLibrary nl = loadLibrary(fromClass, libfile);
             if (nl != null) {
-                System.out.println("NativeLibraries findFromPaths nl is not null.");
                 return nl;
             }
-            System.out.println("NativeLibraries findFromPaths nl is null.");
             libfile = ClassLoaderHelper.mapAlternativeName(libfile);
             if (libfile != null) {
                 nl = loadLibrary(fromClass, libfile);

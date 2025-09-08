@@ -627,7 +627,7 @@ load_crypto_library(jboolean traceEnabled, const char *libName)
 #elif defined(_WIN32) /* defined(_AIX) */
         result = LoadLibrary(libName);
 #else /* defined(_WIN32) */
-        fprintf(stderr, "hello world\n");
+        // fprintf(stderr, "hello world\n");
         int flags = RTLD_LOCAL | RTLD_NOW;
         result = dlmopen(-1,libName, flags);
 #endif /* defined(_AIX) */
