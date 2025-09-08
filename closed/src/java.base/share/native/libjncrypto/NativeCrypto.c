@@ -54,26 +54,26 @@
 
 #include <dlfcn.h>
 
-#if defined(__GLIBC__)
-  #include <link.h>        // dlmopen, Lmid_t, LM_ID_BASE, LM_ID_NEWLM
-  #define HAVE_DLMOPEN 1
-#else
-  // Non-glibc platforms won't have dlmopen. Provide compatible bits so code compiles.
-  #define HAVE_DLMOPEN 0
-  typedef long int Lmid_t;
-  #ifndef LM_ID_BASE
-  #define LM_ID_BASE 0     /* main namespace */
-  #endif
-#endif
+// #if defined(__GLIBC__)
+//   #include <link.h>        // dlmopen, Lmid_t, LM_ID_BASE, LM_ID_NEWLM
+//   #define HAVE_DLMOPEN 1
+// #else
+//   // Non-glibc platforms won't have dlmopen. Provide compatible bits so code compiles.
+//   #define HAVE_DLMOPEN 0
+//   typedef long int Lmid_t;
+//   #ifndef LM_ID_BASE
+//   #define LM_ID_BASE 0     /* main namespace */
+//   #endif
+// #endif
 
-static inline void* open_in_base_ns(const char* name, int flags) {
-#if HAVE_DLMOPEN
-    return dlmopen(LM_ID_BASE, name, flags);   // real dlmopen on glibc
-#else
-    (void)LM_ID_BASE;                          // silence unused warning
-    return dlopen(name, flags);                // portable fallback
-#endif
-}
+// static inline void* open_in_base_ns(const char* name, int flags) {
+// #if HAVE_DLMOPEN
+//     return dlmopen(LM_ID_BASE, name, flags);   // real dlmopen on glibc
+// #else
+//     (void)LM_ID_BASE;                          // silence unused warning
+//     return dlopen(name, flags);                // portable fallback
+// #endif
+// }
 
 #define OPENSSL_VERSION_CODE(major, minor, fix, patch) \
         ((((jlong)(major)) << 28) | ((minor) << 20) | ((fix) << 12) | (patch))
@@ -627,8 +627,9 @@ load_crypto_library(jboolean traceEnabled, const char *libName)
 #elif defined(_WIN32) /* defined(_AIX) */
         result = LoadLibrary(libName);
 #else /* defined(_WIN32) */
+        fprintf(stderr, "hello world\n");
         int flags = RTLD_LOCAL | RTLD_NOW;
-        result = dlmopen(0,libName, flags);
+        result = dlmopen(-1,libName, flags);
 #endif /* defined(_AIX) */
     }
     return result;
