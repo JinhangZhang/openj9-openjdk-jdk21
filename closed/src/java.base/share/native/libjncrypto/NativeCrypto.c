@@ -35,7 +35,7 @@
 #elif defined(_WIN32) /* defined(__linux__) */
 #include <windows.h>
 #endif /* defined(_AIX) */
-#define _GNU_SOURCE 1
+// #define _GNU_SOURCE 1
 
 #include <openssl/evp.h>
 #include <openssl/aes.h>
@@ -53,15 +53,13 @@
 
 #include "jdk_crypto_jniprovider_NativeCrypto.h"
 
-#include <dlfcn.h>
-
-#if defined(__GLIBC__)
-  #include <link.h>   // Lmid_t, LM_ID_NEWLM, RTLD_DI_LMID, RTLD_DI_LINKMAP
-  #define HAVE_DLMOPEN 1
-#else
-  #define HAVE_DLMOPEN 0
-  typedef long int Lmid_t;
-#endif
+// #if defined(__GLIBC__)
+//   #include <link.h>   // Lmid_t, LM_ID_NEWLM, RTLD_DI_LMID, RTLD_DI_LINKMAP
+//   #define HAVE_DLMOPEN 1
+// #else
+//   #define HAVE_DLMOPEN 0
+//   typedef long int Lmid_t;
+// #endif
 
 #define OPENSSL_VERSION_CODE(major, minor, fix, patch) \
         ((((jlong)(major)) << 28) | ((minor) << 20) | ((fix) << 12) | (patch))
@@ -615,44 +613,45 @@ load_crypto_library(jboolean traceEnabled, const char *libName)
 #elif defined(_WIN32) /* defined(_AIX) */
         result = LoadLibrary(libName);
 #else /* defined(_WIN32) */
-        // fprintf(stderr, "hello world\n");
-        void *h = NULL;
-        if (!libName || !*libName) return NULL;
+    //     void *h = NULL;
+    //     if (!libName || !*libName) return NULL;
 
-    #if HAVE_DLMOPEN
-        static Lmid_t s_ns = (Lmid_t)-2;
-        int flags = RTLD_NOW | RTLD_GLOBAL;
+    // #if HAVE_DLMOPEN
+    //     static Lmid_t s_ns = (Lmid_t)-2;
+    //     int flags = RTLD_NOW | RTLD_GLOBAL;
 
-        if (s_ns == (Lmid_t)-2) {
-            h = dlmopen(LM_ID_NEWLM, libName, flags);
-            if (!h) {
-                fprintf(stderr, "dlmopen(NEWLM,%s) failed: %s\n", libName, dlerror());
-                return NULL;
-            }
-            if (dlinfo(h, RTLD_DI_LMID, &s_ns) != 0) {
-                fprintf(stderr, "dlinfo(RTLD_DI_LMID) failed\n");
-            }
-        } else {
-            h = dlmopen(s_ns, libName, flags);
-            if (!h) {
-                fprintf(stderr, "dlmopen(ns=%ld,%s) failed: %s\n", (long)s_ns, libName, dlerror());
-                return NULL;
-            }
-        }
+    //     if (s_ns == (Lmid_t)-2) {
+    //         h = dlmopen(LM_ID_NEWLM, libName, flags);
+    //         if (!h) {
+    //             fprintf(stderr, "dlmopen(NEWLM,%s) failed: %s\n", libName, dlerror());
+    //             return NULL;
+    //         }
+    //         if (dlinfo(h, RTLD_DI_LMID, &s_ns) != 0) {
+    //             fprintf(stderr, "dlinfo(RTLD_DI_LMID) failed\n");
+    //         }
+    //     } else {
+    //         h = dlmopen(s_ns, libName, flags);
+    //         if (!h) {
+    //             fprintf(stderr, "dlmopen(ns=%ld,%s) failed: %s\n", (long)s_ns, libName, dlerror());
+    //             return NULL;
+    //         }
+    //     }
 
-        if (traceEnabled && h) {
-            struct link_map *lm = NULL;
-            if (dlinfo(h, RTLD_DI_LINKMAP, &lm) == 0 && lm && lm->l_name)
-                fprintf(stderr, "[ns=%ld] loaded %s -> %s\n", (long)s_ns, libName, lm->l_name);
-        }
+    //     if (traceEnabled && h) {
+    //         struct link_map *lm = NULL;
+    //         if (dlinfo(h, RTLD_DI_LINKMAP, &lm) == 0 && lm && lm->l_name)
+    //             fprintf(stderr, "[ns=%ld] loaded %s -> %s\n", (long)s_ns, libName, lm->l_name);
+    //     }
 
-    #else
-        int flags = RTLD_NOW | RTLD_GLOBAL;
-        h = dlopen(libName, flags);
-        if (!h) fprintf(stderr, "dlopen(%s) failed: %s\n", libName, dlerror());
-    #endif
+    // #else
+    //     int flags = RTLD_NOW | RTLD_GLOBAL;
+    //     h = dlopen(libName, flags);
+    //     if (!h) fprintf(stderr, "dlopen(%s) failed: %s\n", libName, dlerror());
+    // #endif
 
-        return h;
+    //     return h;
+    result = dlmopen(LM_ID_NEWLM, libName, RTLD_NOW);
+
 #endif /* defined(_AIX) */
     }
     return result;
