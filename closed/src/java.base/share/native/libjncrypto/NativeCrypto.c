@@ -31,11 +31,11 @@
 #include <mach-o/dyld.h>
 #elif defined(__linux__) /* defined(__APPLE__) */
 #include <dlfcn.h>
-#include <link.h>
+#include <link.h> // Lmid_t, LM_ID_NEWLM, RTLD_DI_LMID, RTLD_DI_LINKMAP
 #elif defined(_WIN32) /* defined(__linux__) */
 #include <windows.h>
 #endif /* defined(_AIX) */
-// #define _GNU_SOURCE 1
+#define _GNU_SOURCE
 
 #include <openssl/evp.h>
 #include <openssl/aes.h>
@@ -53,13 +53,12 @@
 
 #include "jdk_crypto_jniprovider_NativeCrypto.h"
 
-// #if defined(__GLIBC__)
-//   #include <link.h>   // Lmid_t, LM_ID_NEWLM, RTLD_DI_LMID, RTLD_DI_LINKMAP
-//   #define HAVE_DLMOPEN 1
-// #else
-//   #define HAVE_DLMOPEN 0
-//   typedef long int Lmid_t;
-// #endif
+#if defined(__GLIBC__)
+  #define HAVE_DLMOPEN 1
+#else
+  #define HAVE_DLMOPEN 0
+  typedef long int Lmid_t;
+#endif
 
 #define OPENSSL_VERSION_CODE(major, minor, fix, patch) \
         ((((jlong)(major)) << 28) | ((minor) << 20) | ((fix) << 12) | (patch))
@@ -613,9 +612,19 @@ load_crypto_library(jboolean traceEnabled, const char *libName)
 #elif defined(_WIN32) /* defined(_AIX) */
         result = LoadLibrary(libName);
 #else /* defined(_WIN32) */
-    //     void *h = NULL;
-    //     if (!libName || !*libName) return NULL;
+        if (!libName || !*libName) return NULL;
 
+        #if HAVE_DLMOPEN
+            int flags = RTLD_NOW | RTLD_GLOBAL;
+            result = dlmopen(LM_ID_NEWLM, libName, flags);
+            if (!result) {
+                fprintf(stderr, "dlmopen(NEWLM,%s) failed: %s\n", libName, dlerror());
+                return NULL;
+            }
+        #else
+            int flags = RTLD_NOW;
+            result = dlopen(libName, flags);
+        #endif
     // #if HAVE_DLMOPEN
     //     static Lmid_t s_ns = (Lmid_t)-2;
     //     int flags = RTLD_NOW | RTLD_GLOBAL;
@@ -650,7 +659,6 @@ load_crypto_library(jboolean traceEnabled, const char *libName)
     // #endif
 
     //     return h;
-    result = dlmopen(LM_ID_NEWLM, libName, RTLD_NOW);
 
 #endif /* defined(_AIX) */
     }
