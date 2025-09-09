@@ -56,12 +56,6 @@
 
 #include "jdk_crypto_jniprovider_NativeCrypto.h"
 
-// #if defined(__GLIBC__)
-//   #define HAVE_DLMOPEN 1
-// #else
-//   #define HAVE_DLMOPEN 0
-// #endif
-
 #define OPENSSL_VERSION_CODE(major, minor, fix, patch) \
         ((((jlong)(major)) << 28) | ((minor) << 20) | ((fix) << 12) | (patch))
 
@@ -616,54 +610,6 @@ load_crypto_library(jboolean traceEnabled, const char *libName)
 #else /* defined(_WIN32) */
         int flags = RTLD_NOW | RTLD_GLOBAL;
         result = dlmopen(LM_ID_NEWLM, libName, flags);
-        // if (!libName || !*libName) return NULL;
-
-        // #if HAVE_DLMOPEN
-        //     int flags = RTLD_NOW | RTLD_GLOBAL;
-        //     result = dlmopen(LM_ID_NEWLM, libName, flags);
-        //     if (!result) {
-        //         fprintf(stderr, "dlmopen(NEWLM,%s) failed: %s\n", libName, dlerror());
-        //         return NULL;
-        //     }
-        // #else
-        //     int flags = RTLD_NOW;
-        //     result = dlopen(libName, flags);
-        // #endif
-    // #if HAVE_DLMOPEN
-    //     static Lmid_t s_ns = (Lmid_t)-2;
-    //     int flags = RTLD_NOW | RTLD_GLOBAL;
-
-    //     if (s_ns == (Lmid_t)-2) {
-    //         h = dlmopen(LM_ID_NEWLM, libName, flags);
-    //         if (!h) {
-    //             fprintf(stderr, "dlmopen(NEWLM,%s) failed: %s\n", libName, dlerror());
-    //             return NULL;
-    //         }
-    //         if (dlinfo(h, RTLD_DI_LMID, &s_ns) != 0) {
-    //             fprintf(stderr, "dlinfo(RTLD_DI_LMID) failed\n");
-    //         }
-    //     } else {
-    //         h = dlmopen(s_ns, libName, flags);
-    //         if (!h) {
-    //             fprintf(stderr, "dlmopen(ns=%ld,%s) failed: %s\n", (long)s_ns, libName, dlerror());
-    //             return NULL;
-    //         }
-    //     }
-
-    //     if (traceEnabled && h) {
-    //         struct link_map *lm = NULL;
-    //         if (dlinfo(h, RTLD_DI_LINKMAP, &lm) == 0 && lm && lm->l_name)
-    //             fprintf(stderr, "[ns=%ld] loaded %s -> %s\n", (long)s_ns, libName, lm->l_name);
-    //     }
-
-    // #else
-    //     int flags = RTLD_NOW | RTLD_GLOBAL;
-    //     h = dlopen(libName, flags);
-    //     if (!h) fprintf(stderr, "dlopen(%s) failed: %s\n", libName, dlerror());
-    // #endif
-
-    //     return h;
-
 #endif /* defined(_AIX) */
     }
     return result;
