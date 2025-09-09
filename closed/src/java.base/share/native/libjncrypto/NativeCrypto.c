@@ -608,7 +608,7 @@ load_crypto_library(jboolean traceEnabled, const char *libName)
 #elif defined(_WIN32) /* defined(_AIX) */
         result = LoadLibrary(libName);
 #else /* defined(_WIN32) */
-        int flags = RTLD_NOW | RTLD_GLOBAL;
+        int flags = RTLD_NOW;
         result = dlmopen(LM_ID_NEWLM, libName, flags);
 #endif /* defined(_AIX) */
     }
