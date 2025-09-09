@@ -35,7 +35,6 @@
 #elif defined(_WIN32) /* defined(__linux__) */
 #include <windows.h>
 #endif /* defined(_AIX) */
-#ifndef _GNU_SOURCE
 #define _GNU_SOURCE 1
 
 #include <openssl/evp.h>
