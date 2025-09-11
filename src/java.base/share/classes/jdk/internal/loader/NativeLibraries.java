@@ -134,8 +134,10 @@ public final class NativeLibraries {
     public NativeLibrary loadLibrary(Class<?> fromClass, File file) {
         // Check to see if we're attempting to access a static library
         String name = findBuiltinLib(file.getName());
+        System.out.println("NativeLibraries loadLibrary, file path is: " + file.getName() + " , findBuiltinLib(file.getName()) is " + name);
         boolean isBuiltin = (name != null);
         if (!isBuiltin) {
+            System.out.println("name is null");
             name = AccessController.doPrivileged(new PrivilegedAction<>() {
                     public String run() {
                         try {
@@ -155,6 +157,7 @@ public final class NativeLibraries {
                 return null;
             }
         }
+        System.out.println("name is not null");
         return loadLibrary(fromClass, name, isBuiltin);
     }
 
@@ -178,6 +181,7 @@ public final class NativeLibraries {
             // find if this library has already been loaded and registered in this NativeLibraries
             NativeLibrary cached = libraries.get(name);
             if (cached != null) {
+                System.out.println(name + " has already been loaded and registered in this NativeLibrarie");
                 return cached;
             }
 
@@ -264,9 +268,10 @@ public final class NativeLibraries {
      */
     public NativeLibrary loadLibrary(Class<?> fromClass, String name) {
         assert name.indexOf(File.separatorChar) < 0;
-
+        System.out.println("NativeLibraries loadLibrary, name is: " + name);
         NativeLibrary lib = findFromPaths(LibraryPaths.SYS_PATHS, fromClass, name);
         if (lib == null && searchJavaLibraryPath) {
+            System.out.println("NativeLibraries loadLibrary, lib is null.");
             lib = findFromPaths(LibraryPaths.USER_PATHS, fromClass, name);
         }
         return lib;
@@ -274,7 +279,10 @@ public final class NativeLibraries {
 
     private NativeLibrary findFromPaths(String[] paths, Class<?> fromClass, String name) {
         for (String path : paths) {
+            System.out.println("NativeLibraries findFromPaths, path is: " + path);
             File libfile = new File(path, System.mapLibraryName(name));
+            System.out.println("NativeLibraries findFromPaths, filename is: " + libfile.getName());
+            System.out.println("NativeLibraries findFromPaths, System.mapLibraryName(name) is: " + System.mapLibraryName(name));
             NativeLibrary nl = loadLibrary(fromClass, libfile);
             if (nl != null) {
                 return nl;
