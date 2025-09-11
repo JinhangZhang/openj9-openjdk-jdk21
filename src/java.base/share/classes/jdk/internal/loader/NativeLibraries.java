@@ -134,7 +134,7 @@ public final class NativeLibraries {
     public NativeLibrary loadLibrary(Class<?> fromClass, File file) {
         // Check to see if we're attempting to access a static library
         String name = findBuiltinLib(file.getName());
-        System.out.println("NativeLibraries loadLibrary, file path is: " + file.getName() + " , findBuiltinLib(file.getName()) is " + name);
+        System.out.println("NativeLibraries loadLibrary, file is: " + file.getName() + " , findBuiltinLib(file.getName()) is " + name);
         boolean isBuiltin = (name != null);
         if (!isBuiltin) {
             System.out.println("name is null");
@@ -354,6 +354,7 @@ public final class NativeLibraries {
             if (handle != 0) {
                 throw new InternalError("Native library " + name + " has been loaded");
             }
+            System.out.println("NativeLibraryImpl open() function");
 
             return load(this, name, isBuiltin, throwExceptionIfFail());
         }

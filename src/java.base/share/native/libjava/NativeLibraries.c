@@ -29,6 +29,7 @@
  * ===========================================================================
  */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
@@ -130,32 +131,53 @@ Java_jdk_internal_loader_NativeLibraries_load
     void * handle;
     jboolean loaded = JNI_FALSE;
 
-    if (!initIDs(env))
+    printf(stderr,
+            "[NativeLibraries_load] enter: isBuiltin=%d, throwExceptionIfFail=%d\n",
+            (int)isBuiltin, (int)throwExceptionIfFail);
+
+    if (!initIDs(env)) {
+        fprintf(stderr, "[NativeLibraries_load] initIDs(env) failed -> return JNI_FALSE\n");
         return JNI_FALSE;
+    }
+
+    if (name == NULL) {
+        fprintf(stderr, "[NativeLibraries_load] name==NULL -> return JNI_FALSE\n");
+        return JNI_FALSE;
+    }
 
     cname = JNU_GetStringPlatformChars(env, name, 0);
-    if (cname == 0)
+    if (cname == 0) {
+        fprintf(stderr, "[NativeLibraries_load] JNU_GetStringPlatformChars returned NULL -> return JNI_FALSE\n");
         return JNI_FALSE;
+    }
+    fprintf(stderr, "[NativeLibraries_load] cname=\"%s\"\n", cname);
     handle = isBuiltin ? procHandle : JVM_LoadLibrary(cname, throwExceptionIfFail);
+    fprintf(stderr, "[NativeLibraries_load] JVM_LoadLibrary/procHandle -> handle=%p (isBuiltin=%d)\n",handle, (int)isBuiltin);
     if (handle) {
         JNI_OnLoad_t JNI_OnLoad;
         JNI_OnLoad = (JNI_OnLoad_t)findJniFunction(env, handle,
                                                    isBuiltin ? cname : NULL,
                                                    JNI_TRUE);
+        fprintf(stderr, "[NativeLibraries_load] findJniFunction -> JNI_OnLoad=%p\n", (void*)JNI_OnLoad);
         if (JNI_OnLoad) {
             JavaVM *jvm;
             (*env)->GetJavaVM(env, &jvm);
             jniVersion = (*JNI_OnLoad)(jvm, NULL);
+            fprintf(stderr, "[NativeLibraries_load] JNI_OnLoad returned jniVersion=0x%08X\n", (unsigned)jniVersion);
         } else {
             jniVersion = 0x00010001;
+            fprintf(stderr, "[NativeLibraries_load] no JNI_OnLoad, default jniVersion=0x%08X\n", (unsigned)jniVersion);
         }
 
         cause = (*env)->ExceptionOccurred(env);
         if (cause) {
+            fprintf(stderr, "[NativeLibraries_load] Exception occurred during/after JNI_OnLoad; rethrowing. isBuiltin=%d\n",
+                    (int)isBuiltin);
             (*env)->ExceptionClear(env);
             (*env)->Throw(env, cause);
             if (!isBuiltin) {
                 JVM_UnloadLibrary(handle);
+                fprintf(stderr, "[NativeLibraries_load] JVM_UnloadLibrary(handle=%p) done\n", handle);
             }
             goto done;
         }
@@ -166,30 +188,41 @@ Java_jdk_internal_loader_NativeLibraries_load
             jio_snprintf(msg, sizeof(msg),
                          "unsupported JNI version 0x%08X required by %s",
                          jniVersion, cname);
+            fprintf(stderr, "[NativeLibraries_load] unsupported jniVersion=0x%08X (isBuiltin=%d) -> throw ULE\n",
+                    (unsigned)jniVersion, (int)isBuiltin);
             JNU_ThrowByName(env, "java/lang/UnsatisfiedLinkError", msg);
             if (!isBuiltin) {
                 JVM_UnloadLibrary(handle);
+                fprintf(stderr, "[NativeLibraries_load] JVM_UnloadLibrary(handle=%p) after ULE\n", handle);
             }
             goto done;
         }
         (*env)->SetIntField(env, lib, jniVersionID, jniVersion);
+        fprintf(stderr, "[NativeLibraries_load] SetIntField(jniVersionID=0x%08X) OK\n", (unsigned)jniVersion);
     } else {
         cause = (*env)->ExceptionOccurred(env);
         if (cause) {
+            fprintf(stderr, "[NativeLibraries_load] JVM_LoadLibrary failed with pending Java exception; rethrowing\n");
             (*env)->ExceptionClear(env);
             (*env)->SetLongField(env, lib, handleID, (jlong)0);
             (*env)->Throw(env, cause);
+        } else {
+            fprintf(stderr, "[NativeLibraries_load] handle==NULL but no Java exception set\n");
         }
         goto done;
     }
 
     (*env)->SetLongField(env, lib, handleID, ptr_to_jlong(handle));
+    fprintf(stderr, "[NativeLibraries_load] SetLongField(handleID=%p) OK\n", handle);
     /* Fix this to resolve the library loading issue on macOS so as to
      * ensure it returns true only when the handle is non-null given
      * the official solution has not yet been released in OpenJDK.
      */
     if (handle) {
         loaded = JNI_TRUE;
+        fprintf(stderr, "[NativeLibraries_load] success -> loaded=JNI_TRUE\n");
+    } else {
+        fprintf(stderr, "[NativeLibraries_load] unexpected: handle NULL after success path -> loaded=JNI_FALSE\n");
     }
 
  done:
