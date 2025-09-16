@@ -136,9 +136,14 @@ public class NativeCrypto {
     private NativeCrypto() {
         ossl_ver = AccessController.doPrivileged((PrivilegedAction<Long>) () -> loadCryptoLibraries()).longValue();
         if (ossl_ver != -1) {
+            System.out.println("NativeCrypto() is called, and ossl_ver != -1");
             isOpenSSLFIPS = isOpenSSLFIPS();
         } else {
+            System.out.println("NativeCrypto() is called, and ossl_ver = -1");
             isOpenSSLFIPS = false;
+        }
+        if (isOpenSSLFIPS) {
+            System.out.println("isOpenSSLFIPS is true");
         }
     }
 
@@ -150,6 +155,7 @@ public class NativeCrypto {
      * @return whether the native crypto libraries have been loaded successfully
      */
     public static final boolean isAllowedAndLoaded() {
+        System.out.println("NativeCrypto isAllowedAndLoaded is called");
         return getVersionIfAvailable() >= 0;
     }
 
@@ -167,6 +173,7 @@ public class NativeCrypto {
             return -1;
         }
 /*[ENDIF] CRIU_SUPPORT */
+        System.out.println("NativeCrypto isAllowedAndLoaded -> getVersionIfAvailable() is called");
         return InstanceHolder.instance.ossl_ver;
     }
 

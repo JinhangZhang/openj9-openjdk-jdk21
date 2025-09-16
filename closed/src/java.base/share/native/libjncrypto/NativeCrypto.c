@@ -412,6 +412,7 @@ static void *crypto_library = NULL;
 JNIEXPORT jboolean JNICALL Java_jdk_crypto_jniprovider_NativeCrypto_isOpenSSLFIPS
   (JNIEnv *env, jclass clazz)
 {
+    fprintf(stderr, "isOpenSSLFIPS is calling...\n");
     return OSSL_IS_FIPS;
 }
 
