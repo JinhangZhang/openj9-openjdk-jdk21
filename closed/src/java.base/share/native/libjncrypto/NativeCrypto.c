@@ -74,10 +74,6 @@
 #define OPENSSL_DECRYPTION_MODE 0
 #define OPENSSL_SAME_MODE (-1)
 
-#ifndef OPENSSL_INIT_NO_ATEXIT
-#define OPENSSL_INIT_NO_ATEXIT 0x00080000UL
-#endif
-
 /* needed for OpenSSL 1.0.2 Thread handling routines */
 #define CRYPTO_LOCK 1
 
@@ -219,10 +215,6 @@ typedef int OSSL_CRYPTO_THREADID_set_callback_t(void (*threadid_func)(CRYPTO_THR
 typedef void OSSL_CRYPTO_set_locking_callback_t(void (*func)(int mode, int type, const char *file, int line));
 
 typedef int OSSL_OPENSSL_init_crypto_t(uint64_t opts, const void *settings);
-
-static void         *g_crypto_handle     = NULL;
-static _Atomic int   g_crypto_init_state = 0;
-static Lmid_t        g_crypto_ns         = (Lmid_t)-2;
 
 static int thread_setup();
 #if defined(WINDOWS)
@@ -614,9 +606,6 @@ load_crypto_library(jboolean traceEnabled, const char *libName)
 {
     void *result = NULL;
     if ((NULL != libName) && ('\0' != *libName)) {
-        if (atomic_load(&g_crypto_init_state) == 1 && g_crypto_handle) {
-            return g_crypto_handle;
-        }
 #if defined(_AIX)
         int flags = RTLD_NOW;
         if (NULL != strrchr(libName, '(')) {
@@ -628,62 +617,24 @@ load_crypto_library(jboolean traceEnabled, const char *libName)
 #else /* defined(_WIN32) */
         int flags = RTLD_NOW;
         if (traceEnabled) fprintf(stderr, "[jncrypto] enter load_crypto_library(%s)\n", libName);
-        if (g_crypto_ns == (Lmid_t)-2) {
-            result = dlmopen(LM_ID_NEWLM, libName, flags);
-            if (!result) {
-                if (traceEnabled) fprintf(stderr, "[jncrypto] dlmopen(NEWLM,%s) failed: %s\n",
-                                        libName, dlerror());
-                int expected = 0;
-                (void)atomic_compare_exchange_strong(&g_crypto_init_state, &expected, -1);
-                return NULL;
-            }
-            Lmid_t nsid;
-            if (dlinfo(result, RTLD_DI_LMID, &nsid) == 0) {
-                g_crypto_ns = nsid;  /* 记住 NEWLM，后续复用 */
-                if (traceEnabled)
-                    fprintf(stderr, "[jncrypto] NEWLM created: ns=%ld handle=%p for %s\n",
-                            (long)g_crypto_ns, result, libName);
-            }
-            g_crypto_handle = result;
-        } else {
-            result = dlmopen(LM_ID_NEWLM, libName, flags);
-            if (!result) {
-                if (traceEnabled)
-                    fprintf(stderr, "[jncrypto] dlmopen(ns=%ld,%s,0x%x) failed: %s\n",
-                            (long)g_crypto_ns, libName, flags, dlerror());
-                int expected = 0;
-                (void)atomic_compare_exchange_strong(&g_crypto_init_state, &expected, -1);
-                return NULL;
-            }
-            g_crypto_handle = result;
+        result = dlmopen(LM_ID_NEWLM, libName, flags);
+        if (!result) {
+            if (traceEnabled) fprintf(stderr, "[jncrypto] dlmopen(NEWLM,%s) failed: %s\n",
+                                    libName, dlerror());
+            return NULL;
         }
-        /* —— 只在加载 libcrypto* 时，且仅一次，调用 NO_ATEXIT —— */
-        if (strstr(libName, "crypto") != NULL) {
-            int expected = 0;
-            if (atomic_compare_exchange_strong(&g_crypto_init_state, &expected, 2)) {
-                if (traceEnabled) fprintf(stderr, "[jncrypto] dlmopen ok: %s -> %p\n", libName, result);
-                OSSL_OPENSSL_init_crypto_t *initcrypto =
+        OSSL_OPENSSL_init_crypto_t *initcrypto =
                     (OSSL_OPENSSL_init_crypto_t*)dlsym(result, "OPENSSL_init_crypto");
-                const char *symerr = dlerror(); /* 读取 dlsym 错误（若有） */
-                if (!initcrypto) {
-                    if (traceEnabled)
-                        fprintf(stderr, "[jncrypto] OPENSSL_init_crypto not found in %s (%s)\n",
+        const char *symerr = dlerror();
+        if (!initcrypto) {
+            if (traceEnabled)
+                fprintf(stderr, "[jncrypto] OPENSSL_init_crypto not found in %s (%s)\n",
                                 libName, symerr ? symerr : "no dlerror");
-                    atomic_store(&g_crypto_init_state, -1);
-                    return NULL;
-                } else {
-                    if (traceEnabled) fprintf(stderr, "[jncrypto] calling OPENSSL_init_crypto(NO_ATEXIT)\n");
-                    int rc = initcrypto(OPENSSL_INIT_NO_ATEXIT, NULL); //DONT REGISTER AN ATEXIT HANDLER FOR THIS LIB COPY
-                    if (traceEnabled) fprintf(stderr, "[jncrypto] OPENSSL_init_crypto => %d\n", rc);
-                    if (rc != 1) {
-                        atomic_store(&g_crypto_init_state, -1);
-                        return NULL;
-                    }
-                    atomic_store(&g_crypto_init_state, 1);  /* 成功 */
-                }
-            }
-        }
-        return g_crypto_handle;
+            return NULL;
+        } 
+        if (traceEnabled) fprintf(stderr, "[jncrypto] calling OPENSSL_init_crypto(NO_ATEXIT)\n");
+        int rc = initcrypto(OPENSSL_INIT_NO_ATEXIT, NULL); //DONT REGISTER AN ATEXIT HANDLER FOR THIS LIB COPY
+        if (traceEnabled) fprintf(stderr, "[jncrypto] OPENSSL_init_crypto => %d\n", rc);
 #endif /* defined(_AIX) */
     }
     return result;
@@ -1139,7 +1090,6 @@ Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
 
     if (missing) {
         fprintf(stderr, "[jncrypto] total missing symbols: %d\n", missing);
-        /* 继续走原来的 big-if 分支即可 */
     }
     #undef REQ
 
