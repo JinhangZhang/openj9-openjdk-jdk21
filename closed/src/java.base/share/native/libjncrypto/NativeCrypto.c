@@ -635,7 +635,7 @@ load_crypto_library(jboolean traceEnabled, const char *libName)
                                         libName, dlerror());
                 int expected = 0;
                 (void)atomic_compare_exchange_strong(&g_crypto_init_state, &expected, -1);
-                return null;
+                return NULL;
             }
             Lmid_t nsid;
             if (dlinfo(result, RTLD_DI_LMID, &nsid) == 0) {
