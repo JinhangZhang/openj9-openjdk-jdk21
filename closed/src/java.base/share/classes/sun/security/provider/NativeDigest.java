@@ -86,12 +86,15 @@ abstract class NativeDigest extends MessageDigestSpi implements Cloneable {
         this.digestLength = digestLength;
         this.algIndx = algIndx;
         this.context = nativeCrypto.DigestCreateContext(0, algIndx);
+        System.out.println("NativeDigest constructor algo is: " + algorithm + ", algIndx is: " + algIndx + ", digestLength is: " + digestLength);
 
         if (this.context == -1) {
+            System.out.println("Error in Native Digest");
             throw new ProviderException("Error in Native Digest");
         }
-
+        System.out.println("this.context != -1");
         digestCleaner.register(this, new DigestCleanerRunnable(this.context));
+        System.out.println("register for digest cleaner");
     }
 
     // return digest length. See JCA doc.
@@ -120,12 +123,14 @@ abstract class NativeDigest extends MessageDigestSpi implements Cloneable {
         }
 
         bytesProcessed += len;
-
+        System.out.println("before nativeCrypto.DigestUpdate in engineUpdate");
         int ret = nativeCrypto.DigestUpdate(context, b, ofs, len);
-
+        System.out.println("after nativeCrypto.DigestUpdate in engineUpdate");
         if (ret == -1) {
+            System.out.println("engineUpdate ret == -1");
             throw new ProviderException("Error in Native Digest");
         }
+        System.out.println("engineUpdate ret != -1");
     }
 
     // reset this object. See JCA doc.
@@ -135,10 +140,14 @@ abstract class NativeDigest extends MessageDigestSpi implements Cloneable {
             return;
         }
 
+        System.out.println("before nativeCrypto.DigestReset in engineReset");
         int ret = nativeCrypto.DigestReset(context);
+        System.out.println("after nativeCrypto.DigestReset in engineReset");
         if (ret == -1) {
+            System.out.println("engineReset ret == -1");
             throw new ProviderException("Error in Native Digest Reset");
         }
+        System.out.println("engineReset ret != -1");
         bytesProcessed = 0;
     }
 
@@ -169,24 +178,30 @@ abstract class NativeDigest extends MessageDigestSpi implements Cloneable {
             throw new DigestException("Buffer too short to store digest");
         }
 
+        System.out.println("before nativeCrypto.DigestComputeAndReset in engineDigest");
         int ret = nativeCrypto.DigestComputeAndReset(context, null, 0, 0, out, ofs, len);
+        System.out.println("after nativeCrypto.DigestComputeAndReset in engineDigest");
 
         if (ret == -1) {
+            System.out.println("engineDigest ret == -1");
             throw new DigestException("Error in Native Digest");
         }
-
+        System.out.println("engineDigest ret != -1");
         bytesProcessed = 0;
         return digestLength;
     }
 
     synchronized public Object clone() throws CloneNotSupportedException {
         NativeDigest copy = (NativeDigest) super.clone();
+        System.out.println("before nativeCrypto.DigestCreateContext in clone");
         copy.context = nativeCrypto.DigestCreateContext(context, algIndx);
+        System.out.println("after nativeCrypto.DigestCreateContext in clone");
 
         if (copy.context == -1) {
+            System.out.println("clone ret == -1");
             throw new ProviderException("Error in Native Digest");
         }
-
+        System.out.println("clone ret != -1");
         digestCleaner.register(copy, new DigestCleanerRunnable(copy.context));
         return copy;
     }

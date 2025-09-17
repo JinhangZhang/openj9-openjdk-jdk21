@@ -144,6 +144,8 @@ public class NativeCrypto {
         }
         if (isOpenSSLFIPS) {
             System.out.println("isOpenSSLFIPS is true");
+        } else {
+            System.out.println("isOpenSSLFIPS is false");
         }
     }
 
