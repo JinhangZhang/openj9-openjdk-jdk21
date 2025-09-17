@@ -891,6 +891,7 @@ Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
     OSSL_error_string_n = (OSSL_error_string_n_t*)find_crypto_symbol(crypto_library, "ERR_error_string_n");
     OSSL_error_string = (OSSL_error_string_t*)find_crypto_symbol(crypto_library, "ERR_error_string");
     OSSL_get_error = (OSSL_get_error_t*)find_crypto_symbol(crypto_library, "ERR_get_error");
+    fprintf(stderr, "11\n");
 
     /* Load Threading routines for OpenSSL 1.0.2. */
     if (ossl_ver < OPENSSL_VERSION_1_1_0) {
@@ -901,6 +902,7 @@ Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
         OSSL_CRYPTO_THREADID_set_callback = (OSSL_CRYPTO_THREADID_set_callback_t*)find_crypto_symbol(crypto_library, "CRYPTO_THREADID_set_callback");
         OSSL_CRYPTO_set_locking_callback = (OSSL_CRYPTO_set_locking_callback_t*)find_crypto_symbol(crypto_library, "CRYPTO_set_locking_callback");
     }
+    fprintf(stderr, "22\n");
 
     /* Load the function symbols for OpenSSL Message Digest algorithms. */
     OSSL_md5 = (OSSL_sha_t*)find_crypto_symbol(crypto_library, "EVP_md5");
@@ -911,21 +913,25 @@ Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
     OSSL_sha512 = (OSSL_sha_t*)find_crypto_symbol(crypto_library, "EVP_sha512");
     OSSL_sha512_224 = (OSSL_sha_t*)find_crypto_symbol(crypto_library, "EVP_sha512_224");
     OSSL_sha512_256 = (OSSL_sha_t*)find_crypto_symbol(crypto_library, "EVP_sha512_256");
+    fprintf(stderr, "33\n");
 
     if (ossl_ver >= OPENSSL_VERSION_1_1_0) {
         OSSL_MD_CTX_new = (OSSL_MD_CTX_new_t*)find_crypto_symbol(crypto_library, "EVP_MD_CTX_new");
         OSSL_MD_CTX_reset = (OSSL_MD_CTX_reset_t*)find_crypto_symbol(crypto_library, "EVP_MD_CTX_reset");
         OSSL_MD_CTX_free = (OSSL_MD_CTX_free_t*)find_crypto_symbol(crypto_library, "EVP_MD_CTX_free");
+        fprintf(stderr, "44\n");
     } else {
         OSSL_MD_CTX_new = (OSSL_MD_CTX_new_t*)find_crypto_symbol(crypto_library, "EVP_MD_CTX_create");
         OSSL_MD_CTX_reset = (OSSL_MD_CTX_reset_t*)find_crypto_symbol(crypto_library, "EVP_MD_CTX_cleanup");
         OSSL_MD_CTX_free = (OSSL_MD_CTX_free_t*)find_crypto_symbol(crypto_library, "EVP_MD_CTX_destroy");
+        fprintf(stderr, "55\n");
     }
 
     OSSL_DigestInit_ex = (OSSL_DigestInit_ex_t*)find_crypto_symbol(crypto_library, "EVP_DigestInit_ex");
     OSSL_MD_CTX_copy_ex = (OSSL_MD_CTX_copy_ex_t*)find_crypto_symbol(crypto_library, "EVP_MD_CTX_copy_ex");
     OSSL_DigestUpdate = (OSSL_DigestUpdate_t*)find_crypto_symbol(crypto_library, "EVP_DigestUpdate");
     OSSL_DigestFinal_ex = (OSSL_DigestFinal_ex_t*)find_crypto_symbol(crypto_library, "EVP_DigestFinal_ex");
+    fprintf(stderr, "66\n");
 
     /* Load the function symbols for OpenSSL CBC and GCM Cipher algorithms. */
     OSSL_CIPHER_CTX_new = (OSSL_CIPHER_CTX_new_t*)find_crypto_symbol(crypto_library, "EVP_CIPHER_CTX_new");
@@ -944,31 +950,38 @@ Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
     OSSL_DecryptInit_ex = (OSSL_DecryptInit_ex_t*)find_crypto_symbol(crypto_library, "EVP_DecryptInit_ex");
     OSSL_DecryptUpdate = (OSSL_DecryptUpdate_t*)find_crypto_symbol(crypto_library, "EVP_DecryptUpdate");
     OSSL_DecryptFinal = (OSSL_DecryptFinal_t*)find_crypto_symbol(crypto_library, "EVP_DecryptFinal");
+    fprintf(stderr, "77\n");
 
     /* Load the functions symbols for OpenSSL ChaCha20 algorithms. (Need OpenSSL 1.1.x or above) */
     if (ossl_ver >= OPENSSL_VERSION_1_1_0) {
         OSSL_chacha20 = (OSSL_cipher_t*)find_crypto_symbol(crypto_library, "EVP_chacha20");
         OSSL_chacha20_poly1305 = (OSSL_cipher_t*)find_crypto_symbol(crypto_library, "EVP_chacha20_poly1305");
+        fprintf(stderr, "88\n");
     } else {
         OSSL_chacha20 = NULL;
         OSSL_chacha20_poly1305 = NULL;
+        fprintf(stderr, "99\n");
     }
 
     /* Load the functions symbols for OpenSSL RSA algorithm. */
     OSSL_RSA_new = (OSSL_RSA_new_t*)find_crypto_symbol(crypto_library, "RSA_new");
+    fprintf(stderr, "100\n");
 
     if (ossl_ver >= OPENSSL_VERSION_1_1_0) {
         OSSL_RSA_set0_key = (OSSL_RSA_set0_key_t*)find_crypto_symbol(crypto_library, "RSA_set0_key");
         OSSL_RSA_set0_factors = (OSSL_RSA_set0_factors_t*)find_crypto_symbol(crypto_library, "RSA_set0_factors");
         OSSL_RSA_set0_crt_params = (OSSL_RSA_set0_key_t*)find_crypto_symbol(crypto_library, "RSA_set0_crt_params");
+        fprintf(stderr, "110\n");
     } else {
         OSSL_RSA_set0_key = &OSSL102_RSA_set0_key;
         OSSL_RSA_set0_factors = &OSSL102_RSA_set0_factors;
         OSSL_RSA_set0_crt_params = &OSSL102_RSA_set0_crt_params;
+        fprintf(stderr, "120\n");
     }
     OSSL_RSA_free = (OSSL_RSA_free_t *)find_crypto_symbol(crypto_library, "RSA_free");
     OSSL_RSA_public_decrypt = (OSSL_RSA_public_decrypt_t *)find_crypto_symbol(crypto_library, "RSA_public_decrypt");
     OSSL_RSA_private_encrypt = (OSSL_RSA_private_encrypt_t *)find_crypto_symbol(crypto_library, "RSA_private_decrypt");
+    fprintf(stderr, "130\n");
 
     /* Load the function symbols for BIGNUM manipulation. */
     OSSL_BN_new = (OSSL_BN_new_t *)find_crypto_symbol(crypto_library, "BN_new");
@@ -977,6 +990,7 @@ Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
     OSSL_BN_free = (OSSL_BN_free_t *)find_crypto_symbol(crypto_library, "BN_free");
     OSSL_BN_bn2bin = (OSSL_BN_bn2bin_t *)find_crypto_symbol(crypto_library, "BN_bn2bin");
     OSSL_BN_num_bits = (OSSL_BN_num_bits_t *)find_crypto_symbol(crypto_library, "BN_num_bits");
+    fprintf(stderr, "140\n");
 
     /* Load the functions symbols for OpenSSL EC algorithm. */
     OSSL_EC_KEY_generate_key = (OSSL_EC_KEY_generate_key_t *)find_crypto_symbol(crypto_library, "EC_KEY_generate_key");
@@ -1001,6 +1015,7 @@ Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
     OSSL_EC_KEY_check_key = (OSSL_EC_KEY_check_key_t*)find_crypto_symbol(crypto_library, "EC_KEY_check_key");
     OSSL_EC_POINT_set_affine_coordinates_GFp = (OSSL_EC_POINT_set_affine_coordinates_GFp_t*)find_crypto_symbol(crypto_library, "EC_POINT_set_affine_coordinates");
     OSSL_EC_POINT_get_affine_coordinates_GFp = (OSSL_EC_POINT_get_affine_coordinates_GFp_t *)find_crypto_symbol(crypto_library, "EC_POINT_get_affine_coordinates");
+    fprintf(stderr, "150\n");
     if (NULL == OSSL_EC_KEY_set_public_key_affine_coordinates) {
         /* method missing in OpenSSL version 1.0.0 */
         EC_set_public_key = &setECPublicKey;
@@ -1030,6 +1045,7 @@ Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
     } else {
         OSSL_ECGF2M = JNI_TRUE;
     }
+    fprintf(stderr, "150\n");
 
     /* Load the functions symbols for OpenSSL XDH and ECDSA algorithms. (Need OpenSSL 1.1.x or above). */
     if (ossl_ver >= OPENSSL_VERSION_1_1_1) {
@@ -1054,6 +1070,7 @@ Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
         OSSL_ECDSA_SIG_get0_r = (OSSL_ECDSA_SIG_get0_r_t *)find_crypto_symbol(crypto_library, "ECDSA_SIG_get0_r");
         OSSL_ECDSA_SIG_get0_s = (OSSL_ECDSA_SIG_get0_s_t *)find_crypto_symbol(crypto_library, "ECDSA_SIG_get0_s");
         OSSL_ECDSA_SIG_set0 = (OSSL_ECDSA_SIG_set0_t *)find_crypto_symbol(crypto_library, "ECDSA_SIG_set0");
+        fprintf(stderr, "160\n");
     } else {
         OSSL_EVP_PKEY_CTX_new = NULL;
         OSSL_EVP_PKEY_CTX_new_id = NULL;
@@ -1076,11 +1093,13 @@ Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
         OSSL_ECDSA_SIG_get0_r = NULL;
         OSSL_ECDSA_SIG_get0_s = NULL;
         OSSL_ECDSA_SIG_set0 = NULL;
+        fprintf(stderr, "170\n");
     }
 
     /* Load the functions symbols for OpenSSL PBE algorithm. */
     OSSL_PKCS12_key_gen = (OSSL_PKCS12_key_gen_t*)find_crypto_symbol(crypto_library, "PKCS12_key_gen_uni");
     OSSL_PKCS5_PBKDF2_HMAC = (OSSL_PKCS5_PBKDF2_HMAC_t*)find_crypto_symbol(crypto_library, "PKCS5_PBKDF2_HMAC");
+    fprintf(stderr, "180\n");
 
     int missing = 0;
     #define REQ(sym, name) do { \
@@ -1090,6 +1109,7 @@ Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
         } \
     } while (0)
 
+    fprintf(stderr, "190\n");
     REQ(OSSL_error_string,         "ERR_error_string");
     REQ(OSSL_error_string_n,       "ERR_error_string_n");
     REQ(OSSL_PKCS12_key_gen,       "PKCS12_key_gen_uni");
@@ -1101,13 +1121,13 @@ Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
     REQ(OSSL_sha384,    "EVP_sha384");
     REQ(OSSL_sha512,    "EVP_sha512");
     REQ(OSSL_sha384,    "EVP_sha384");
-
     REQ(OSSL_OPENSSL_init_crypto,  "OPENSSL_init_crypto");
 
     if (missing) {
         fprintf(stderr, "[jncrypto] total missing symbols: %d\n", missing);
     }
     #undef REQ
+    fprintf(stderr, "190\n");
 
     if ((NULL == OSSL_error_string) ||
         (NULL == OSSL_error_string_n) ||
@@ -1209,19 +1229,24 @@ Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
         ((NULL == OSSL_CRYPTO_THREADID_set_callback) && (ossl_ver < OPENSSL_VERSION_1_1_0)) ||
         ((NULL == OSSL_CRYPTO_set_locking_callback) && (ossl_ver < OPENSSL_VERSION_1_1_0))
     ) {
+        fprintf(stderr, "200\n");
         if (traceEnabled) {
             fprintf(stderr, "Error loading OpenSSL: One or more of the required symbols are missing.");
         }
         unload_crypto_library(crypto_library);
+        fprintf(stderr, "210\n");
         crypto_library = NULL;
         return -1;
     } else {
+        fprintf(stderr, "220\n");
         if (ossl_ver < OPENSSL_VERSION_1_1_0) {
+            fprintf(stderr, "230\n");
             if (0 != thread_setup()) {
                 if (traceEnabled) {
                     fprintf(stderr, "Error loading OpenSSL: Thread setup was unsuccessful.");
                 }
                 unload_crypto_library(crypto_library);
+                fprintf(stderr, "240\n");
                 crypto_library = NULL;
                 return -1;
             }
