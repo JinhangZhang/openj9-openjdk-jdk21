@@ -365,8 +365,10 @@ public final class SunEntries {
         }
 
         if (useNativeSHA256 && NativeCrypto.isAllowedAndLoaded()) {
+            System.out.println("Using native 256");
             providerSHA256 = "sun.security.provider.NativeSHA2$SHA256";
         } else {
+            System.out.println("Using java 256");
             providerSHA256 = "sun.security.provider.SHA2$SHA256";
         }
 
