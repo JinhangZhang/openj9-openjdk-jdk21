@@ -531,10 +531,14 @@ get_crypto_library_version(jboolean traceEnabled, void *crypto_library, const ch
      * the symbol "SSLeay_version" is used by OpenSSL 1.0.
      * Currently only openssl 1.0.x, 1.1.x and 3.x.x are supported.
      */
+    fprintf(stderr, "get_crypto_library_version try to call find_crypto_symbol...\n");
     OSSL_version = (OSSL_version_t*)find_crypto_symbol(crypto_library, "OpenSSL_version");
+    fprintf(stderr, "get_crypto_library_version finish call find_crypto_symbol...\n");
 
     if (NULL == OSSL_version) {
+        fprintf(stderr, "OSSL_version is NULL, try to find_crypto_symbol for find_crypto_symbol...\n");
         OSSL_version = (OSSL_version_t*)find_crypto_symbol(crypto_library, "SSLeay_version");
+        fprintf(stderr, "OSSL_version is NULL, after find_crypto_symbol for find_crypto_symbol...\n");
 
         if (NULL == OSSL_version) {
             if (traceEnabled) {
@@ -577,20 +581,28 @@ get_crypto_library_version(jboolean traceEnabled, void *crypto_library, const ch
 
     /* Check whether the loaded OpenSSL library is in FIPS mode. */
     if (ossl_ver >= OPENSSL_VERSION_3_0_0) {
+        fprintf(stderr, "ossl_ver >= OPENSSL_VERSION_3_0_0...\n");
         typedef int OSSL_fipsmode_t(OSSL_LIB_CTX *);
         OSSL_fipsmode_t *ossl_fipsmode = (OSSL_fipsmode_t *)find_crypto_symbol(crypto_library, "EVP_default_properties_is_fips_enabled");
+        fprintf(stderr, "find_crypto_symbol for EVP_default_properties_is_fips_enabled...\n");
         if ((NULL != ossl_fipsmode) && (1 == (*ossl_fipsmode)(NULL))) {
             OSSL_IS_FIPS = JNI_TRUE;
+            fprintf(stderr, "OSSL_IS_FIPS is JNI_TRUE...\n");
         } else {
             OSSL_IS_FIPS = JNI_FALSE;
+            fprintf(stderr, "OSSL_IS_FIPS is JNI_FALSE...\n");
         }
     } else {
+        fprintf(stderr, "ossl_ver < OPENSSL_VERSION_3_0_0...\n");
         typedef int OSSL_fipsmode_t(void);
         OSSL_fipsmode_t *ossl_fipsmode = (OSSL_fipsmode_t *)find_crypto_symbol(crypto_library, "FIPS_mode");
+        fprintf(stderr, "find_crypto_symbol for FIPS_mode...\n");
         if ((NULL != ossl_fipsmode) && (1 == (*ossl_fipsmode)())) {
             OSSL_IS_FIPS = JNI_TRUE;
+            fprintf(stderr, "OSSL_IS_FIPS is JNI_TRUE...\n");
         } else {
             OSSL_IS_FIPS = JNI_FALSE;
+            fprintf(stderr, "OSSL_IS_FIPS is JNI_FALSE...\n");
         }
     }
 
@@ -871,7 +883,9 @@ Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
     }
 
     log_crypto_library_path(traceEnabled, crypto_library, "OpenSSL to be used was loaded from");
+    fprintf(stderr, "loadCrypto get_crypto_library_version is calling...\n");
     ossl_ver = get_crypto_library_version(traceEnabled, crypto_library, "Version of OpenSSL library that is used");
+    fprintf(stderr, "loadCrypto get_crypto_library_version finish call...\n");
 
     /* Load the function symbols for OpenSSL errors. */
     OSSL_error_string_n = (OSSL_error_string_n_t*)find_crypto_symbol(crypto_library, "ERR_error_string_n");
@@ -1080,6 +1094,7 @@ Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
     REQ(OSSL_error_string_n,       "ERR_error_string_n");
     REQ(OSSL_PKCS12_key_gen,       "PKCS12_key_gen_uni");
     REQ(OSSL_PKCS5_PBKDF2_HMAC,    "PKCS5_PBKDF2_HMAC");
+    REQ(OSSL_md5,    "EVP_md5");
     REQ(OSSL_sha1,    "EVP_sha1");
     REQ(OSSL_sha256,    "EVP_sha256");
     REQ(OSSL_sha224,    "EVP_sha224");
@@ -1211,6 +1226,7 @@ Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
                 return -1;
             }
         }
+        fprintf(stderr, "ossl_ver >= OPENSSL_VERSION_1_1_0.");
         if (traceEnabled) {
             fprintf(stderr, "OpenSSL library loaded successfully.\n");
         }

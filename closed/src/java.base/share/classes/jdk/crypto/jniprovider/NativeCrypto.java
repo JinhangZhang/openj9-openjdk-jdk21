@@ -138,6 +138,7 @@ public class NativeCrypto {
         if (ossl_ver != -1) {
             System.out.println("NativeCrypto() is called, and ossl_ver != -1");
             isOpenSSLFIPS = isOpenSSLFIPS();
+            System.out.println("NativeCrypto() is finished.");
         } else {
             System.out.println("NativeCrypto() is called, and ossl_ver = -1");
             isOpenSSLFIPS = false;
