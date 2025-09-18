@@ -194,7 +194,9 @@ final class ProviderConfig {
 
             // Create providers which are in java.base directly
             if (provName.equals("SUN") || provName.equals("sun.security.provider.Sun")) {
+                System.out.println("ProviderConfig -> getProvider() -> sun provider");
                 p = new sun.security.provider.Sun();
+                System.out.println("ProviderConfig -> getProvider() -> sun provider finished");
             } else if (provName.equals("SunRsaSign") || provName.equals("sun.security.rsa.SunRsaSign")) {
                 p = new sun.security.rsa.SunRsaSign();
             } else if (provName.equals("SunJCE") || provName.equals("com.sun.crypto.provider.SunJCE")) {

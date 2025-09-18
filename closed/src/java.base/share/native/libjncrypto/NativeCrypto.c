@@ -822,8 +822,7 @@ Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
                 if (NULL == crypto_library) {
                     if (traceEnabled) {
                         fprintf(stderr, "OpenSSL library specified in jdk.openssl.lib couldn't be loaded.\n");
-                        fprintf(stderr, "[jncrypto] dlmopen(NEWLM,%s) failed: %s\n",
-                                            libName, dlerror());
+                        fprintf(stderr, "[jncrypto] dlmopen(NEWLM,%s) failed: %s\n", clibName, dlerror());
                         fflush(stderr);
                     }
                     (*env)->ReleaseStringUTFChars(env, jlibname, clibname);
@@ -834,9 +833,8 @@ Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
                 const char *symerr = dlerror();
                 if (!initcrypto) {
                     if (traceEnabled)
-                        fprintf(stderr, "[jncrypto] OPENSSL_init_crypto not found in %s (%s)\n",
-                                        libName, symerr ? symerr : "no dlerror");
-                    return NULL;
+                        fprintf(stderr, "[jncrypto] OPENSSL_init_crypto not found in %s (%s)\n", clibName, symerr ? symerr : "no dlerror");
+                    return -1;
                 }
                 if (traceEnabled) fprintf(stderr, "[jncrypto] calling OPENSSL_init_crypto(NO_ATEXIT)\n");
                 int rc = initcrypto(OPENSSL_INIT_NO_ATEXIT, NULL); //DONT REGISTER AN ATEXIT HANDLER FOR THIS LIB COPY
