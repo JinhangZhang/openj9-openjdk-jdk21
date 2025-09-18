@@ -631,6 +631,22 @@ load_crypto_library(jboolean traceEnabled, const char *libName)
         int flags = RTLD_NOW;
         if (traceEnabled) fprintf(stderr, "[jncrypto] enter load_crypto_library(%s)\n", libName);
         result = dlmopen(LM_ID_NEWLM, libName, flags);
+        if (!result) {
+            if (traceEnabled) fprintf(stderr, "[jncrypto] dlmopen(NEWLM,%s) failed: %s\n",
+                                    libName, dlerror());
+            return NULL;
+        }
+        OSSL_OPENSSL_init_crypto_t *initcrypto =
+                (OSSL_OPENSSL_init_crypto_t*)dlsym(result, "OPENSSL_init_crypto");
+        const char *symerr = dlerror();
+        if (!initcrypto) {
+            if (traceEnabled)
+                fprintf(stderr, "[jncrypto] OPENSSL_init_crypto not found in %s (%s)\n", libName, symerr ? symerr : "no dlerror");
+                    return NULL;
+        }
+        if (traceEnabled) fprintf(stderr, "[jncrypto] calling OPENSSL_init_crypto(NO_ATEXIT)\n");
+        int rc = initcrypto(OPENSSL_INIT_NO_ATEXIT, NULL); //DONT REGISTER AN ATEXIT HANDLER FOR THIS LIB COPY
+        if (traceEnabled) fprintf(stderr, "[jncrypto] OPENSSL_init_crypto => %d\n", rc);
 #endif /* defined(_AIX) */
     }
     return result;
@@ -822,23 +838,11 @@ Java_jdk_crypto_jniprovider_NativeCrypto_loadCrypto
                 if (NULL == crypto_library) {
                     if (traceEnabled) {
                         fprintf(stderr, "OpenSSL library specified in jdk.openssl.lib couldn't be loaded.\n");
-                        fprintf(stderr, "[jncrypto] dlmopen(NEWLM,%s) failed: %s\n", clibname, dlerror());
                         fflush(stderr);
                     }
                     (*env)->ReleaseStringUTFChars(env, jlibname, clibname);
                     return -1;
                 }
-                OSSL_OPENSSL_init_crypto_t *initcrypto =
-                            (OSSL_OPENSSL_init_crypto_t*)dlsym(crypto_library, "OPENSSL_init_crypto");
-                const char *symerr = dlerror();
-                if (!initcrypto) {
-                    if (traceEnabled)
-                        fprintf(stderr, "[jncrypto] OPENSSL_init_crypto not found in %s (%s)\n", clibname, symerr ? symerr : "no dlerror");
-                    return -1;
-                }
-                if (traceEnabled) fprintf(stderr, "[jncrypto] calling OPENSSL_init_crypto(NO_ATEXIT)\n");
-                int rc = initcrypto(OPENSSL_INIT_NO_ATEXIT, NULL); //DONT REGISTER AN ATEXIT HANDLER FOR THIS LIB COPY
-                if (traceEnabled) fprintf(stderr, "[jncrypto] OPENSSL_init_crypto => %d\n", rc);
             }
             (*env)->ReleaseStringUTFChars(env, jlibname, clibname);
         }
