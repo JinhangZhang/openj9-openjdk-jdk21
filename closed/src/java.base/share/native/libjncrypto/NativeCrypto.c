@@ -52,38 +52,6 @@
 
 #include "jdk_crypto_jniprovider_NativeCrypto.h"
 
-/* ---------------------------------------------
- * 隔离加载支持
- * --------------------------------------------- */
-static void *g_crypto_handle = NULL;
-#ifdef __GLIBC__
-static Lmid_t g_crypto_lmid = LM_ID_BASE;
-#endif
-
-/* 仅在 glibc 上：尝试把 libcrypto 放入私有命名空间；失败则回退到 dlopen */
-static void* load_in_private_namespace(const char *path, int flags_nowlocal) {
-#ifdef __GLIBC__
-    void *h = dlmopen(LM_ID_NEWLM, path,
-                      RTLD_LOCAL | flags_nowlocal
-#ifdef RTLD_DEEPBIND
-                      | RTLD_DEEPBIND
-#endif
-                      );
-    if (h != NULL) {
-#ifdef RTLD_DI_LMID
-        (void)dlinfo(h, RTLD_DI_LMID, &g_crypto_lmid);
-#endif
-        return h;
-    }
-#endif /* __GLIBC__ */
-    return dlopen(path,
-                  RTLD_LOCAL | flags_nowlocal
-#ifdef RTLD_DEEPBIND
-                  | RTLD_DEEPBIND
-#endif
-                  );
-}
-
 #define OPENSSL_VERSION_CODE(major, minor, fix, patch) \
         ((((jlong)(major)) << 28) | ((minor) << 20) | ((fix) << 12) | (patch))
 
