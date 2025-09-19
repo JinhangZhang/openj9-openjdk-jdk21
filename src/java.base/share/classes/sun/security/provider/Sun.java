@@ -51,19 +51,26 @@ public final class Sun extends Provider {
     public Sun() {
         /* We are the SUN provider */
         super("SUN", PROVIDER_VER, INFO);
-
+        System.out.println("Sun 1");
         Provider p = this;
+        System.out.println("Sun 2");
         Iterator<Provider.Service> serviceIter = new SunEntries(p).iterator();
+        System.out.println("Sun 3");
 
         // if there is no security manager installed, put directly into
         // the provider
         if (System.getSecurityManager() == null) {
+            System.out.println("Sun 4");
             putEntries(serviceIter);
+            System.out.println("Sun 5");
         } else {
+            System.out.println("Sun 6");
             AccessController.doPrivileged(new PrivilegedAction<Void>() {
                 @Override
                 public Void run() {
+                    System.out.println("Sun 7");
                     putEntries(serviceIter);
+                    System.out.println("Sun 8");
                     return null;
                 }
             });
@@ -71,8 +78,11 @@ public final class Sun extends Provider {
     }
 
     void putEntries(Iterator<Provider.Service> i) {
+        System.out.println("Sun putEntries 1");
         while (i.hasNext()) {
+            System.out.println("Sun putEntries !!!");
             putService(i.next());
+            System.out.println("Sun putEntries ???");
         }
     }
 }

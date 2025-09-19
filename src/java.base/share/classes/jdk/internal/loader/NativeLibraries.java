@@ -212,7 +212,7 @@ public final class NativeLibraries {
                     }
                 }
             }
-
+            System.out.println("loadLibrary new NativeLibraryImpl name is: " + name);
             NativeLibraryImpl lib = new NativeLibraryImpl(fromClass, name, isBuiltin);
             // load the native library
             NativeLibraryContext.push(lib);
@@ -351,6 +351,7 @@ public final class NativeLibraries {
          * Loads the named native library
          */
         boolean open() {
+            System.out.println("NativeLibraryImpl open() function name is: " + name);
             if (handle != 0) {
                 throw new InternalError("Native library " + name + " has been loaded");
             }
