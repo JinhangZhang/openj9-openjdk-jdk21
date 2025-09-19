@@ -131,9 +131,7 @@ Java_jdk_internal_loader_NativeLibraries_load
     void * handle;
     jboolean loaded = JNI_FALSE;
 
-    printf(stderr,
-            "[NativeLibraries_load] enter: isBuiltin=%d, throwExceptionIfFail=%d\n",
-            (int)isBuiltin, (int)throwExceptionIfFail);
+    fprintf(stderr, "[NativeLibraries_load] enter");
 
     if (!initIDs(env)) {
         fprintf(stderr, "[NativeLibraries_load] initIDs(env) failed -> return JNI_FALSE\n");
