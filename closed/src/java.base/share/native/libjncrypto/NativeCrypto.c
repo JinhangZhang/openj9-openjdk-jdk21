@@ -604,7 +604,37 @@ load_crypto_library(jboolean traceEnabled, const char *libName)
 #elif defined(_WIN32) /* defined(_AIX) */
         result = LoadLibrary(libName);
 #else /* defined(_WIN32) */
-        result = dlmopen(LM_ID_NEWLM, libName, RTLD_NOW);
+        if (traceEnabled) fprintf(stderr, "[jncrypto] enter load_crypto_library(%s)\n", libName);
+        const char *jhome = getenv("JAVA_HOME");
+        int isPath = (libName && strchr(libName, '/')); /* 仅 POSIX */
+        int wantIsolate = 0;
+
+        if (isPath) {
+            if ((NULL != strstr(libName, "libcrypto-semeru"))
+                || (jhome && *jhome && strstr(libName, jhome) && strstr(libName, "/lib/"))) {
+                wantIsolate = 1; /* 只隔离 JDK 打包的那份 */
+            }
+        }
+#ifdef __GLIBC__
+        if (wantIsolate) {
+            result = dlmopen(LM_ID_NEWLM, libName, flags);
+            if ((NULL == result) && traceEnabled) {
+                const char *e = dlerror();
+                fprintf(stdout, "\tload_crypto_library: dlmopen(%s) failed: %s (fallback to dlopen)\n",
+                        libName, e ? e : "(null)");
+            } else if (result && traceEnabled) {
+                fprintf(stdout, "\tload_crypto_library: dlmopen(%s) OK\n", libName);
+            }
+        }
+#endif
+        if (NULL == result) {
+            result = dlopen(libName, flags); /* 系统候选始终走这里；打包库也能回退 */
+            if ((NULL == result) && traceEnabled) {
+                const char *e = dlerror();
+                fprintf(stdout, "\tload_crypto_library: dlopen(%s) failed: %s\n",
+                        libName, e ? e : "(null)");
+            }
+        }
 #endif /* defined(_AIX) */
     }
     return result;
