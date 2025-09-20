@@ -617,7 +617,7 @@ load_crypto_library(jboolean traceEnabled, const char *libName)
         }
 #ifdef __GLIBC__
         if (wantIsolate) {
-            result = dlmopen(LM_ID_NEWLM, libName, RTLD_NOW);
+            result = dlmopen(LM_ID_NEWLM, libName, RTLD_NOW | RTLD_LOCAL);
             if ((NULL == result) && traceEnabled) {
                 const char *e = dlerror();
                 fprintf(stdout, "\tload_crypto_library: dlmopen(%s) failed: %s (fallback to dlopen)\n",
