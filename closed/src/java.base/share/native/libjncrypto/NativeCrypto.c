@@ -612,12 +612,12 @@ load_crypto_library(jboolean traceEnabled, const char *libName)
         if (isPath) {
             if ((NULL != strstr(libName, "libcrypto-semeru"))
                 || (jhome && *jhome && strstr(libName, jhome) && strstr(libName, "/lib/"))) {
-                wantIsolate = 1; /* 只隔离 JDK 打包的那份 */
+                wantIsolate = 1;
             }
         }
 #ifdef __GLIBC__
         if (wantIsolate) {
-            result = dlmopen(LM_ID_NEWLM, libName, flags);
+            result = dlmopen(LM_ID_NEWLM, libName, RTLD_NOW);
             if ((NULL == result) && traceEnabled) {
                 const char *e = dlerror();
                 fprintf(stdout, "\tload_crypto_library: dlmopen(%s) failed: %s (fallback to dlopen)\n",
@@ -628,7 +628,7 @@ load_crypto_library(jboolean traceEnabled, const char *libName)
         }
 #endif
         if (NULL == result) {
-            result = dlopen(libName, flags); /* 系统候选始终走这里；打包库也能回退 */
+            result = dlopen(libName, RTLD_NOW); /* 系统候选始终走这里；打包库也能回退 */
             if ((NULL == result) && traceEnabled) {
                 const char *e = dlerror();
                 fprintf(stdout, "\tload_crypto_library: dlopen(%s) failed: %s\n",
