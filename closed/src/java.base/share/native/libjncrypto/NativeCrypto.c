@@ -621,12 +621,27 @@ load_crypto_library(jboolean traceEnabled, const char *libName)
 #ifdef __GLIBC__
         if (wantIsolate) {
             result = dlmopen(LM_ID_NEWLM, libName, RTLD_NOW | RTLD_LOCAL);
-            if ((NULL == result) && traceEnabled) {
+            if (NULL == result) {
                 const char *e = dlerror();
-                fprintf(stdout, "\tload_crypto_library: dlmopen(%s) failed: %s (fallback to dlopen)\n",
-                        libName, e ? e : "(null)");
-            } else if (result && traceEnabled) {
-                fprintf(stdout, "\tload_crypto_library: dlmopen(%s) OK\n", libName);
+                if (traceEnabled) fprintf(stdout, "\tload_crypto_library: dlmopen(%s) failed: %s (fallback to dlopen)\n", libName, e ? e : "(null)");
+            } else {
+                if (traceEnabled) fprintf(stdout, "\tload_crypto_library: dlmopen(%s) OK\n", libName);
+                
+                /* 1) 禁用系统 openssl.cnf，避免读到系统 provider 配置 */
+                setenv("OPENSSL_CONF", "/dev/null", 0);
+                setenv("OPENSSL_CONF_IGNORE", "1", 0);
+
+                /* 2) 明确告诉它去 JDK 打包的 provider 目录找模块 */
+                const char *slash = strrchr(libName, '/');
+                if (slash) {
+                    char moddir[4096];
+                    size_t dirlen = (size_t)(slash - libName);
+                    if (dirlen + strlen("/ossl-modules") + 1 < sizeof(moddir)) {
+                        memcpy(moddir, libName, dirlen);
+                        strcpy(moddir + dirlen, "/ossl-modules");
+                        setenv("OPENSSL_MODULES", moddir, 0);
+                    }
+                }
             }
         }
 #endif
