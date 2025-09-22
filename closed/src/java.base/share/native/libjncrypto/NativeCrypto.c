@@ -644,6 +644,7 @@ load_crypto_library(jboolean traceEnabled, const char *libName)
             }
 
             if (traceEnabled) fprintf(stdout, "\tload_crypto_library: dlmopen(%s) OK\n", libName);
+            return result;
     }
 #endif
         /* 系统候选（无斜杠的 SONAME 等）：普通 dlopen，落到基命名空间 */
