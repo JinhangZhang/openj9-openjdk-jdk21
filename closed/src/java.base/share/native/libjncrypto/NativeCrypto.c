@@ -608,51 +608,53 @@ load_crypto_library(jboolean traceEnabled, const char *libName)
         result = LoadLibrary(libName);
 #else /* defined(_WIN32) */
         if (traceEnabled) fprintf(stderr, "[jncrypto] enter load_crypto_library(%s)\n", libName);
-        const char *jhome = getenv("JAVA_HOME");
-        int isPath = (libName && strchr(libName, '/')); /* 仅 POSIX */
-        int wantIsolate = 0;
+         /* 判断是否为“打包库”：带路径且包含 libcrypto-semeru */
+        const char *slash = strchr(libName, '/');
+        const int isPath    = (slash != NULL);
+        const int isBundled = isPath && (strstr(libName, "libcrypto-semeru") != NULL);
 
-        if (isPath) {
-            if ((NULL != strstr(libName, "libcrypto-semeru"))
-                || (jhome && *jhome && strstr(libName, jhome) && strstr(libName, "/lib/"))) {
-                wantIsolate = 1;
-            }
-        }
 #ifdef __GLIBC__
-        if (wantIsolate) {
-            result = dlmopen(LM_ID_NEWLM, libName, RTLD_NOW | RTLD_LOCAL);
-            if (NULL == result) {
-                const char *e = dlerror();
-                if (traceEnabled) fprintf(stdout, "\tload_crypto_library: dlmopen(%s) failed: %s (fallback to dlopen)\n", libName, e ? e : "(null)");
-            } else {
-                if (traceEnabled) fprintf(stdout, "\tload_crypto_library: dlmopen(%s) OK\n", libName);
-                
-                /* 1) 禁用系统 openssl.cnf，避免读到系统 provider 配置 */
-                setenv("OPENSSL_CONF", "/dev/null", 0);
-                setenv("OPENSSL_CONF_IGNORE", "1", 0);
+        if (isBundled) {
+            /* 仅对打包库尝试隔离到 NEWLM；失败直接返回让上层改走系统库 */
+            dlerror();
+            result = dlmopen(LM_ID_NEWLM, libName, flags);
+            if (result == NULL) {
+                if (traceEnabled) fprintf(stdout, "\tload_crypto_library: dlmopen(%s) failed: %s\n",
+                                        libName, dlerror());
+                return NULL; /* 关键：不要回落到 dlopen，避免把打包库塞回基命名空间 */
+            }
 
-                /* 2) 明确告诉它去 JDK 打包的 provider 目录找模块 */
-                const char *slash = strrchr(libName, '/');
-                if (slash) {
-                    char moddir[4096];
-                    size_t dirlen = (size_t)(slash - libName);
-                    if (dirlen + strlen("/ossl-modules") + 1 < sizeof(moddir)) {
-                        memcpy(moddir, libName, dirlen);
-                        strcpy(moddir + dirlen, "/ossl-modules");
-                        setenv("OPENSSL_MODULES", moddir, 0);
+            /* 成功隔离后：忽略系统 openssl.cnf，并把 provider 指到打包目录下的 ossl-modules */
+            const char *last = strrchr(libName, '/');
+            if (last) {
+                char moddir[PATH_MAX];
+                int n = snprintf(moddir, sizeof(moddir), "%.*s/ossl-modules",
+                                (int)(last - libName), libName);
+                if (n > 0 && n < (int)sizeof(moddir)) {
+                    if (!getenv("OPENSSL_CONF"))        setenv("OPENSSL_CONF", "/dev/null", 0);
+                    if (!getenv("OPENSSL_CONF_IGNORE")) setenv("OPENSSL_CONF_IGNORE", "1", 0);
+                    if (!getenv("OPENSSL_MODULES"))     setenv("OPENSSL_MODULES", moddir, 0);
+                    if (traceEnabled) {
+                        fprintf(stdout, "\tload_crypto_library: OPENSSL_MODULES=%s\n", moddir);
                     }
+                } else if (traceEnabled) {
+                    fprintf(stdout, "\tload_crypto_library: compute OPENSSL_MODULES failed for %s\n", libName);
                 }
             }
-        }
+
+            if (traceEnabled) fprintf(stdout, "\tload_crypto_library: dlmopen(%s) OK\n", libName);
+    }
 #endif
-        if (NULL == result) {
-            result = dlopen(libName, RTLD_NOW); /* 系统候选始终走这里；打包库也能回退 */
-            if ((NULL == result) && traceEnabled) {
-                const char *e = dlerror();
-                fprintf(stdout, "\tload_crypto_library: dlopen(%s) failed: %s\n",
-                        libName, e ? e : "(null)");
-            }
+        /* 系统候选（无斜杠的 SONAME 等）：普通 dlopen，落到基命名空间 */
+        dlerror();
+        result = dlopen(libName, flags);
+        if (result == NULL) {
+            if (traceEnabled) fprintf(stdout, "\tload_crypto_library: dlopen(%s) failed: %s\n",
+                                    libName, dlerror());
+            return NULL;
         }
+        if (traceEnabled) fprintf(stdout, "\tload_crypto_library: dlopen(%s) OK\n", libName);
+        return result;
 #endif /* defined(_AIX) */
     }
     return result;
