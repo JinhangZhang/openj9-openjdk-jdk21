@@ -609,6 +609,7 @@ load_crypto_library(jboolean traceEnabled, const char *libName)
 #else /* defined(_WIN32) */
         if (traceEnabled) fprintf(stderr, "[jncrypto] enter load_crypto_library(%s)\n", libName);
          /* 判断是否为“打包库”：带路径且包含 libcrypto-semeru */
+        int flags = RTLD_NOW;
         const char *slash = strchr(libName, '/');
         const int isPath    = (slash != NULL);
         const int isBundled = isPath && (strstr(libName, "libcrypto-semeru") != NULL);
