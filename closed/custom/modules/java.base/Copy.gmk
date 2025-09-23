@@ -201,9 +201,24 @@ endif # OPENJ9_ENABLE_JFR
 ##########################################################################################
 # Optionally copy OpenSSL Crypto Library
 # To bundle first search for openssl 1.1.x library, if not found, search for 1.0.x
+$(info OPENSSL_BUNDLE_LIB_PATH=$(OPENSSL_BUNDLE_LIB_PATH))
+$(info [Copy.gmk] dump $(abspath $(OPENSSL_LOCAL_CFG_DIR))/99-semeru.conf)
+$(info $(shell f="$(abspath $(OPENSSL_LOCAL_CFG_DIR))/99-semeru.conf"; \
+  if [ -f "$$f" ]; then echo "----- BEGIN $$f -----"; sed -n '1,200p' "$$f"; echo "----- END $$f -----"; \
+  else echo "(not found: $$f)"; fi))
 ifneq ($(OPENSSL_BUNDLE_LIB_PATH), )
+  $(info [Copy.gmk] OPENSSL_BUNDLE_LIB_PATH=$(abspath $(OPENSSL_BUNDLE_LIB_PATH)))
+  $(info [Copy.gmk] OPENJDK_TARGET_OS=$(OPENJDK_TARGET_OS))
+  $(info [Copy.gmk] --- $(OPENSSL_BUNDLE_LIB_PATH) ---)
+  $(info $(shell ls $(OPENSSL_BUNDLE_LIB_PATH) 2>/dev/null || echo "(no such dir)"))
+  $(info [Copy.gmk] --- $(OPENSSL_BUNDLE_LIB_PATH)/$(OPENJDK_TARGET_OS) ---)
+  $(info $(shell ls $(OPENSSL_BUNDLE_LIB_PATH)/$(OPENJDK_TARGET_OS) 2>/dev/null || echo "(no such dir)"))
+  $(info check $(OPENSSL_LOCAL_CFG_DIR))
+  $(info $(shell ls $(OPENSSL_LOCAL_CFG_DIR) 2>/dev/null || echo "(no such dir)"))
+  $(info [openssl-bundle] OPENSSL_BUNDLE_LIB_PATH=$(OPENSSL_BUNDLE_LIB_PATH))
+  $(info [openssl-bundle] abs=$(abspath $(OPENSSL_BUNDLE_LIB_PATH)))
   ifeq (linux,$(OPENJDK_TARGET_OS))
-    LIBCRYPTO_NAMES := libcrypto.so.3 libcrypto.so.1.1 libcrypto.so.1.0.0
+    LIBCRYPTO_NAMES := libcrypto-semeru.so.3 libcrypto-semeru.so libcrypto.so.3 libcrypto.so.1.1 libcrypto.so.1.0.0
   else ifeq (macosx,$(OPENJDK_TARGET_OS))
     LIBCRYPTO_NAMES := libcrypto.3.dylib libcrypto.1.1.dylib libcrypto.1.0.0.dylib
   else ifeq (windows,$(OPENJDK_TARGET_OS))
@@ -219,36 +234,76 @@ ifneq ($(OPENSSL_BUNDLE_LIB_PATH), )
     # See https://github.com/openssl/openssl/pull/6487.
     LIBCRYPTO_NAMES := libcrypto64.so.3 libcrypto.so.3 libcrypto.so.1.1 libcrypto.so.1.0.0
   else
-    LIBCRYPTO_NAMES := libcrypto.so
+    LIBCRYPTO_NAMES := libcrypto-semeru.so libcrypto.so
   endif
   LIBCRYPTO_PATH := $(firstword $(wildcard $(addprefix $(OPENSSL_BUNDLE_LIB_PATH)/, $(LIBCRYPTO_NAMES))))
   ifeq ($(LIBCRYPTO_PATH), )
     $(error Cannot bundle OpenSSL - none of $(LIBCRYPTO_NAMES) are present in $(OPENSSL_BUNDLE_LIB_PATH))
   endif
 
-  LIBCRYPTO_TARGET_LIB := $(LIB_DST_DIR)/$(LIBRARY_PREFIX)crypto-semeru$(SHARED_LIBRARY_SUFFIX)
-  TARGETS += $(LIBCRYPTO_TARGET_LIB)
-  $(LIBCRYPTO_TARGET_LIB) : $(LIBCRYPTO_PATH)
+  ifeq (linux,$(OPENJDK_TARGET_OS))
+    LIBCRYPTO_TARGET_VER := $(LIB_DST_DIR)/$(LIBRARY_PREFIX)crypto-semeru.so.3
+    LIBCRYPTO_TARGET_LIB := $(LIB_DST_DIR)/$(LIBRARY_PREFIX)crypto-semeru$(SHARED_LIBRARY_SUFFIX)
+    TARGETS += $(LIBCRYPTO_TARGET_VER) $(LIBCRYPTO_TARGET_LIB)
+
+    $(LIBCRYPTO_TARGET_VER) : $(LIBCRYPTO_PATH)
 	$(call install-file)
-  ifeq (macosx,$(OPENJDK_TARGET_OS))
-    # update @rpath of the crypto library as the default is /usr/local/lib/
-	install_name_tool -id "@rpath/$(@F)" $@
-  else ifeq (windows,$(OPENJDK_TARGET_OS))
-	$(CHMOD) a+rx $@
-  endif
 	$(call CodesignFile,"$@")
+
+    $(LIBCRYPTO_TARGET_LIB) : $(LIBCRYPTO_TARGET_VER)
+	$(RM) -f $@
+	$(LN) -s $(notdir $(LIBCRYPTO_TARGET_VER)) $@
+	$(call CodesignFile,"$@")
+
+  else ifeq (macosx,$(OPENJDK_TARGET_OS))
+    LIBCRYPTO_TARGET_LIB := $(LIB_DST_DIR)/$(LIBRARY_PREFIX)crypto-semeru$(SHARED_LIBRARY_SUFFIX)
+    TARGETS += $(LIBCRYPTO_TARGET_LIB)
+    $(LIBCRYPTO_TARGET_LIB) : $(LIBCRYPTO_PATH)
+	$(call install-file)
+	# 将 install_name 设为 @rpath/<文件名>，以便运行时定位
+	install_name_tool -id "@rpath/$(@F)" $@
+	$(call CodesignFile,"$@")
+
+  else ifeq (windows,$(OPENJDK_TARGET_OS))
+    LIBCRYPTO_TARGET_LIB := $(LIB_DST_DIR)/$(LIBRARY_PREFIX)crypto-semeru$(SHARED_LIBRARY_SUFFIX)
+    TARGETS += $(LIBCRYPTO_TARGET_LIB)
+    $(LIBCRYPTO_TARGET_LIB) : $(LIBCRYPTO_PATH)
+	$(call install-file)
+	$(CHMOD) a+rx $@
+	$(call CodesignFile,"$@")
+
+  else ifeq (aix,$(OPENJDK_TARGET_OS))
+    LIBCRYPTO_TARGET_LIB := $(LIB_DST_DIR)/$(LIBRARY_PREFIX)crypto-semeru$(SHARED_LIBRARY_SUFFIX)
+    TARGETS += $(LIBCRYPTO_TARGET_LIB)
+    $(LIBCRYPTO_TARGET_LIB) : $(LIBCRYPTO_PATH)
+	$(call install-file)
+	$(call CodesignFile,"$@")
+
+  else
+    LIBCRYPTO_TARGET_LIB := $(LIB_DST_DIR)/$(LIBRARY_PREFIX)crypto-semeru$(SHARED_LIBRARY_SUFFIX)
+    TARGETS += $(LIBCRYPTO_TARGET_LIB)
+    $(LIBCRYPTO_TARGET_LIB) : $(LIBCRYPTO_PATH)
+	$(call install-file)
+	$(call CodesignFile,"$@")
+  endif
 
   ifeq (true,$(OPENJ9_ENABLE_JITSERVER))
     ifeq (linux,$(OPENJDK_TARGET_OS))
-      LIBSSL_NAMES := libssl.so.3 libssl.so.1.1 libssl.so.1.0.0
+      LIBSSL_NAMES := libssl-semeru.so.3 libssl-semeru.so libssl.so.3 libssl.so.1.1 libssl.so.1.0.0
       LIBSSL_PATH := $(firstword $(wildcard $(addprefix $(OPENSSL_BUNDLE_LIB_PATH)/, $(LIBSSL_NAMES))))
-
       ifneq ($(LIBSSL_PATH), )
-        LIBSSL_TARGET_LIB = $(LIB_DST_DIR)/$(LIBRARY_PREFIX)ssl-semeru$(SHARED_LIBRARY_SUFFIX)
-        TARGETS += $(LIBSSL_TARGET_LIB)
-        $(LIBSSL_TARGET_LIB) : $(LIBSSL_PATH)
-			$(call install-file)
-			$(call CodesignFile,"$@")
+        LIBSSL_TARGET_VER := $(LIB_DST_DIR)/$(LIBRARY_PREFIX)ssl-semeru.so.3
+        LIBSSL_TARGET_LIB := $(LIB_DST_DIR)/$(LIBRARY_PREFIX)ssl-semeru$(SHARED_LIBRARY_SUFFIX)
+        TARGETS += $(LIBSSL_TARGET_VER) $(LIBSSL_TARGET_LIB)
+
+        $(LIBSSL_TARGET_VER) : $(LIBSSL_PATH)
+	$(call install-file)
+	$(call CodesignFile,"$@")
+
+        $(LIBSSL_TARGET_LIB) : $(LIBSSL_TARGET_VER)
+	$(RM) -f $@
+	$(LN) -s $(notdir $(LIBSSL_TARGET_VER)) $@
+	$(call CodesignFile,"$@")
       endif # LIBSSL_PATH
     endif # OPENJDK_TARGET_OS
   endif # OPENJ9_ENABLE_JITSERVER

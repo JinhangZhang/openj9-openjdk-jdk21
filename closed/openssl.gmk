@@ -61,6 +61,9 @@ else # windows
   OPENSSL_PATCH :=
 endif # windows
 
+###############################################################################
+# Linux-only: local OPENSSL target variants with shlib_variant = "-semeru"
+###############################################################################
 # Identify the desired openssl target configuration.
 OPENSSL_TARGET :=
 ifeq ($(OPENJDK_TARGET_OS), aix)
@@ -107,10 +110,50 @@ ifneq (,$(CCACHE))
   OPENSSL_MAKE += CC=$(ac_cv_prog_CC) CXX=$(ac_cv_prog_CXX)
 endif # CCACHE
 
-build_openssl :
-	@$(ECHO) Compiling OpenSSL in $(OPENSSL_DIR) for $(OPENSSL_TARGET)$(if $(OPENSSL_CONFIG_CFLAGS), with additional CFLAGS $(OPENSSL_CONFIG_CFLAGS))
-	( $(OPENSSL_CONFIG_SETUP) $(CD) $(OPENSSL_DIR) && $(PERL) Configure $(OPENSSL_CONFIG_CFLAGS) $(OPENSSL_TARGET) no-makedepend no-tests shared )
-	$(OPENSSL_PATCH)
-	+ ( $(OPENSSL_MAKE_SETUP) $(CD) $(OPENSSL_DIR) && $(OPENSSL_MAKE) )
+###############################################################################
+# Linux-only: local OPENSSL target variants with shlib_variant = "-semeru"
+###############################################################################
+.PHONY: emit_linux_semeru_conf
+
+$(info OPENSSL_DIR=$(OPENSSL_DIR))
+$(info SUPPORT_OUTPUTDIR=$(SUPPORT_OUTPUTDIR))
+ifeq ($(OPENJDK_TARGET_OS), linux)
+  # Absolute path recommended for Configure
+  OPENSSL_LOCAL_CFG_DIR      := $(SUPPORT_OUTPUTDIR)/local-config
+  # Effective target: append '-semeru' on Linux
+  OPENSSL_TARGET_EFFECTIVE   := semeru
+  # Extra env: let OpenSSL see our local conf
+  OPENSSL_CONFIG_ENV_EXTRA   := export OPENSSL_LOCAL_CONFIG_DIR='$(OPENSSL_LOCAL_CFG_DIR)' &&
+  # Pre-step dependency
+  PRE_BUILD_OPENSSL          := emit_linux_semeru_conf
+  $(info openssl.gmk 1)
+
+emit_linux_semeru_conf:
+	@$(MKDIR) -p $(OPENSSL_LOCAL_CFG_DIR)
+	@{ \
+	  printf '%s\n' '%targets = (' \
+      '  "semeru" => { inherit_from => [ "'$(OPENSSL_TARGET)'" ], shlib_variant => "-semeru", },' \
+	    ');'; \
+	} > $(OPENSSL_LOCAL_CFG_DIR)/99-semeru.conf
+	@$(ECHO) "Wrote $(OPENSSL_LOCAL_CFG_DIR)/99-semeru.conf"
+
+else # not linux
+  OPENSSL_LOCAL_CFG_DIR      :=
+  OPENSSL_TARGET_EFFECTIVE   := $(OPENSSL_TARGET)
+  OPENSSL_CONFIG_ENV_EXTRA   :=
+  PRE_BUILD_OPENSSL          :=
+endif
+
+$(info openssl.gmk 2)
+
+build_openssl : $(PRE_BUILD_OPENSSL)
+  @$(ECHO) Compiling OpenSSL in $(OPENSSL_DIR) for $(OPENSSL_TARGET_EFFECTIVE)$(if $(OPENSSL_CONFIG_CFLAGS), with additional CFLAGS $(OPENSSL_CONFIG_CFLAGS))
+  ( $(OPENSSL_CONFIG_SETUP) $(OPENSSL_CONFIG_ENV_EXTRA) $(CD) $(OPENSSL_DIR) && $(PERL) Configure $(OPENSSL_CONFIG_CFLAGS) $(OPENSSL_TARGET_EFFECTIVE) no-makedepend no-tests shared )
+  $(OPENSSL_PATCH)
+  + ( $(OPENSSL_MAKE_SETUP) $(CD) $(OPENSSL_DIR) && $(OPENSSL_MAKE) )
+
+$(info openssl.gmk 3)
 
 .PHONY : build_openssl
+
+$(info openssl.gmk 4)
