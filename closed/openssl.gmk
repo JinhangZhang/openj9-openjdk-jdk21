@@ -128,11 +128,12 @@ ifeq ($(OPENJDK_TARGET_OS), linux)
   PRE_BUILD_OPENSSL          := emit_linux_semeru_conf
   $(info openssl.gmk 1)
 
+.PHONY: emit_linux_semeru_conf
 emit_linux_semeru_conf:
 	@$(MKDIR) -p $(OPENSSL_LOCAL_CFG_DIR)
 	@{ \
 	  printf '%s\n' '%targets = (' \
-      '  "semeru" => { inherit_from => [ "'$(OPENSSL_TARGET)'" ], shlib_variant => "-semeru", },' \
+	    '  "semeru" => { inherit_from => [ "'$(OPENSSL_TARGET)'" ], shlib_variant => "-semeru", },' \
 	    ');'; \
 	} > $(OPENSSL_LOCAL_CFG_DIR)/99-semeru.conf
 	@$(ECHO) "Wrote $(OPENSSL_LOCAL_CFG_DIR)/99-semeru.conf"
@@ -146,14 +147,12 @@ endif
 
 $(info openssl.gmk 2)
 
-build_openssl : $(PRE_BUILD_OPENSSL)
-  @$(ECHO) Compiling OpenSSL in $(OPENSSL_DIR) for $(OPENSSL_TARGET_EFFECTIVE)$(if $(OPENSSL_CONFIG_CFLAGS), with additional CFLAGS $(OPENSSL_CONFIG_CFLAGS))
-  ( $(OPENSSL_CONFIG_SETUP) $(OPENSSL_CONFIG_ENV_EXTRA) $(CD) $(OPENSSL_DIR) && $(PERL) Configure $(OPENSSL_CONFIG_CFLAGS) $(OPENSSL_TARGET_EFFECTIVE) no-makedepend no-tests shared )
-  $(OPENSSL_PATCH)
-  + ( $(OPENSSL_MAKE_SETUP) $(CD) $(OPENSSL_DIR) && $(OPENSSL_MAKE) )
-
-$(info openssl.gmk 3)
-
 .PHONY : build_openssl
+build_openssl: $(PRE_BUILD_OPENSSL)
+	@$(ECHO) Compiling OpenSSL in $(OPENSSL_DIR) for $(OPENSSL_TARGET_EFFECTIVE)$(if $(OPENSSL_CONFIG_CFLAGS), with additional CFLAGS $(OPENSSL_CONFIG_CFLAGS))
+	( $(OPENSSL_CONFIG_SETUP) $(OPENSSL_CONFIG_ENV_EXTRA) $(CD) $(OPENSSL_DIR) && \
+	  $(PERL) Configure $(OPENSSL_CONFIG_CFLAGS) $(OPENSSL_TARGET_EFFECTIVE) no-makedepend no-tests shared )
+	$(OPENSSL_PATCH)
+	+ ( $(OPENSSL_MAKE_SETUP) $(CD) $(OPENSSL_DIR) && $(OPENSSL_MAKE) )
 
 $(info openssl.gmk 4)
