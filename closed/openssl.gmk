@@ -1,3 +1,4 @@
+
 # ===========================================================================
 # (c) Copyright IBM Corp. 2018, 2025 All Rights Reserved
 # ===========================================================================
@@ -100,8 +101,16 @@ else
 endif
 
 ifeq ($(OPENJDK_TARGET_OS), linux)
-  OPENSSL_LOCAL_CFG_DIR    := $(SUPPORT_OUTPUTDIR)/local-config
-  OPENSSL_TARGET_EFFECTIVE := semeru
+  ifeq ($(OPENJDK_TARGET_CPU), ppc64le)
+    OPENSSL_TARGET_EFFECTIVE := semeru-xl64
+  else ifeq ($(OPENJDK_TARGET_CPU), s390x)
+    OPENSSL_TARGET_EFFECTIVE := semeru-xz64
+  else ifeq ($(OPENJDK_TARGET_CPU), x86_64)
+    OPENSSL_TARGET_EFFECTIVE := semeru-xa64
+	else ifeq ($(OPENJDK_TARGET_CPU), aarch64)
+		OPENSSL_TARGET_EFFECTIVE := semeru-xr64
+  endif
+  OPENSSL_LOCAL_CFG_DIR    := $(TOPDIR)/closed/openssl-conf
   OPENSSL_CONFIG_ENV_EXTRA := export OPENSSL_LOCAL_CONFIG_DIR='$(OPENSSL_LOCAL_CFG_DIR)' &&
 endif
 
@@ -115,14 +124,6 @@ endif # CCACHE
 
 build_openssl :
 ifeq ($(OPENJDK_TARGET_OS), linux)
-	@$(MKDIR) -p "$(OPENSSL_LOCAL_CFG_DIR)"
-	@{ \
-		printf '%s\n' 'our %targets;'; \
-		printf '%s\n' '%targets = (%targets,'; \
-		printf '%s\n' '  "semeru" => { inherit_from => [ "'$(OPENSSL_TARGET)'" ], shlib_variant => "-semeru" },'; \
-		printf '%s\n' ');'; \
-	} > "$(OPENSSL_LOCAL_CFG_DIR)/99-semeru.conf"
-	@$(ECHO) "Wrote $(OPENSSL_LOCAL_CFG_DIR)/99-semeru.conf in $(OPENJDK_TARGET_OS)"
 	@$(ECHO) Compiling OpenSSL in $(OPENSSL_DIR) for $(OPENSSL_TARGET_EFFECTIVE)$(if $(OPENSSL_CONFIG_CFLAGS), with additional CFLAGS $(OPENSSL_CONFIG_CFLAGS))
 	( $(OPENSSL_CONFIG_SETUP) $(OPENSSL_CONFIG_ENV_EXTRA) $(CD) $(OPENSSL_DIR) && \
 	  $(PERL) Configure $(OPENSSL_CONFIG_CFLAGS) $(OPENSSL_TARGET_EFFECTIVE) no-makedepend no-tests shared )
