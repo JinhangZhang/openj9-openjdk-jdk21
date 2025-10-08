@@ -202,10 +202,8 @@ endif # OPENJ9_ENABLE_JFR
 # Optionally copy OpenSSL Crypto Library
 # To bundle first search for openssl 1.1.x library, if not found, search for 1.0.x
 ifneq ($(OPENSSL_BUNDLE_LIB_PATH), )
-  $(info $(shell ls $(OPENSSL_BUNDLE_LIB_PATH) 2>/dev/null || echo "(no such dir)"))
-  $(info $(shell ls $(LIB_DST_DIR) 2>/dev/null || echo "(no such dir)"))
   ifeq (linux,$(OPENJDK_TARGET_OS))
-    LIBCRYPTO_NAMES := libcrypto-semeru.so.3 libcrypto-semeru.so
+    LIBCRYPTO_NAMES := libcrypto-semeru.so.3
   else ifeq (macosx,$(OPENJDK_TARGET_OS))
     LIBCRYPTO_NAMES := libcrypto.3.dylib libcrypto.1.1.dylib libcrypto.1.0.0.dylib
   else ifeq (windows,$(OPENJDK_TARGET_OS))
@@ -242,7 +240,7 @@ ifneq ($(OPENSSL_BUNDLE_LIB_PATH), )
 
   ifeq (true,$(OPENJ9_ENABLE_JITSERVER))
     ifeq (linux,$(OPENJDK_TARGET_OS))
-      LIBSSL_NAMES := libssl-semeru.so.3 libssl-semeru.so
+      LIBSSL_NAMES := libssl-semeru.so.3
       LIBSSL_PATH := $(firstword $(wildcard $(addprefix $(OPENSSL_BUNDLE_LIB_PATH)/, $(LIBSSL_NAMES))))
 
       ifneq ($(LIBSSL_PATH), )
