@@ -131,6 +131,13 @@ public class Hybrid {
             right = getKeyPairGenerator(rightAlg);
             leftSpec = getSpec(leftAlg);
             rightSpec = getSpec(rightAlg);
+            System.err.println("=== HYBRID KPG CONSTRUCTOR ===");
+            System.err.println("leftAlg       = " + leftAlg);
+            System.err.println("rightAlg      = " + rightAlg);
+            System.err.println("left provider = " + left.getProvider());
+            System.err.println("right provider= " + right.getProvider());
+            System.err.println("leftSpec      = " + leftSpec);
+            System.err.println("rightSpec     = " + rightSpec);
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.finer("Hybrid KeyPairGenerator:\n"
                         + "  " + leftAlg + " is from " + left.getProvider().getName() + "\n"
@@ -142,8 +149,13 @@ public class Hybrid {
         public void initialize(AlgorithmParameterSpec params,
                 SecureRandom random)
                 throws InvalidAlgorithmParameterException {
+            System.err.println("=== HYBRID INITIALIZE ===");
+            System.err.println("params    = " + params);
+            System.err.println("leftSpec  = " + leftSpec);
+            System.err.println("rightSpec = " + rightSpec);
             left.initialize(leftSpec, random);
             right.initialize(rightSpec, random);
+            System.err.println("Hybrid underlying KPGs initialized");
         }
 
         @Override
@@ -153,8 +165,25 @@ public class Hybrid {
 
         @Override
         public KeyPair generateKeyPair() {
+            System.err.println("=== HYBRID GENERATE KEYPAIR ===");
+            System.err.println("left provider = " + left.getProvider());
+            System.err.println("right provider = " + right.getProvider());
+
             var kp1 = left.generateKeyPair();
             var kp2 = right.generateKeyPair();
+
+            System.err.println("left public class = "
+                    + kp1.getPublic().getClass().getName());
+            System.err.println("left encoded length = "
+                    + kp1.getPublic().getEncoded().length);
+
+            if (kp1.getPublic() instanceof java.security.interfaces.ECPublicKey ec) {
+                System.err.println("EC field size = "
+                        + ec.getParams().getCurve().getField().getFieldSize());
+                System.err.println("EC order bits = "
+                        + ec.getParams().getOrder().bitLength());
+            }
+
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.finer("Hybrid KeyPairGenerator:\n"
                         + "  left publicKey is from " + kp1.getPublic().getClass().getName() + ", "
